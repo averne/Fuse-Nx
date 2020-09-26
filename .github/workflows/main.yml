@@ -1,0 +1,30 @@
+name: build-main
+
+on: [push, pull_request]
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+    - run: sudo apt install -y libfuse-dev libgcrypt-dev libre2-dev gcc-10 g++-10
+
+    - uses: actions/checkout@v1
+
+    - uses: actions/setup-python@v1
+      with:
+        python-version: '3.x'
+
+    - run: pip install meson ninja
+
+    - run: meson setup build
+      env:
+        CC: /usr/bin/gcc-10
+        CXX: /usr/bin/g++-10
+
+    - run: meson compile -C build -v -j$(nproc)
+
+    - uses: actions/upload-artifact@v1
+      if: failure()
+      with:
+        name: compile-log
+        path: build/meson-logs/meson-log.txt

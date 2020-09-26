@@ -28,6 +28,7 @@ class DumpContext final: public Context {
     public:
         struct Options {
             std::size_t                        depth = -1;
+            std::size_t                        jobs  =  1;
             std::vector<std::filesystem::path> paths;
         };
 

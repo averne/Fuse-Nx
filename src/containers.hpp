@@ -78,17 +78,16 @@ class HfsContainer final: public Container<hac::Hfs> {
 class RomFsContainer final: public Container<hac::RomFs> {
     public:
         RomFsContainer(std::unique_ptr<io::FileBase> &&base):
-            Container(std::move(base)), parsed(true), parsed_mtx(std::make_shared<std::mutex>()), path("/") { }
+            Container(std::move(base)), parsed(true), path("/") { }
 
         RomFsContainer(const RomFsContainer &other, std::string &&path):
-            Container(other.container), parsed_mtx(other.parsed_mtx), path(std::move(path)) { }
+            Container(other.container), path(std::move(path)) { }
 
         virtual std::vector<FileEntry> read_files()   override;
         virtual std::vector<DirEntry>  read_folders() override;
 
         void parse_dir(hac::RomFs::DirEntry *dir) {
             if (!this->parsed) {
-                std::scoped_lock lk(*this->parsed_mtx);
                 this->container->parse_dir(dir);
                 this->parsed = true;
             }
@@ -96,7 +95,6 @@ class RomFsContainer final: public Container<hac::RomFs> {
 
     private:
         bool parsed = false;
-        std::shared_ptr<std::mutex> parsed_mtx;
         std::string path;
 };
 

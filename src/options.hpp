@@ -18,6 +18,7 @@
 #pragma once
 
 #include <filesystem>
+#include <thread>
 #include <CLI/CLI.hpp>
 
 #include "dump.hpp"
@@ -110,6 +111,8 @@ struct DumpOptions {
         this->dump_cmd = app.add_subcommand("dump", "Dump file or folders");
         this->dump_cmd->add_option("-d,--depth", this->opts.depth, "Stop after N levels into the filesystem hierarchy")
             ->type_name("N")
+            ->check(CLI::NonNegativeNumber);
+        this->dump_cmd->add_option("-j,--jobs", this->opts.jobs, "Max number of jobs to spawn")
             ->check(CLI::NonNegativeNumber);
         this->dump_cmd->add_option("container", this->container, "Path of the container to mount")
             ->check(CLI::ExistingFile)

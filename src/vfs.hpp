@@ -19,9 +19,10 @@
 
 #include <filesystem>
 #include <functional>
-#include <mutex>
 #include <memory>
+#include <mutex>
 #include <optional>
+#include <shared_mutex>
 #include <string_view>
 #include <unordered_map>
 #include <utility>
@@ -135,36 +136,37 @@ class FileSystem {
         std::optional<std::shared_ptr<Folder>> process_dir(const std::filesystem::path &path);
 
         void add_file(const std::filesystem::path &&path, std::shared_ptr<File> node) {
-            std::scoped_lock lk(this->files_lock);
+            std::unique_lock lk(this->files_lock);
             this->files.try_emplace(std::move(path), std::move(node));
         }
 
         void add_folder(const std::filesystem::path &&path, std::shared_ptr<Folder> node) {
-            std::scoped_lock lk(this->folders_lock);
+            std::unique_lock lk(this->folders_lock);
             this->folders.try_emplace(std::move(path), std::move(node));
         }
 
-        std::optional<std::shared_ptr<File>> get_file(const std::string &path) {
-            std::scoped_lock lk(this->files_lock);
+        std::optional<std::shared_ptr<File>> get_file(const std::string &path) const {
+            std::shared_lock lk(this->files_lock);
             auto it = this->files.find(path);
             return (it != this->files.end()) ? std::make_optional(it->second) : std::nullopt;
         }
 
-        std::optional<std::shared_ptr<Folder>> get_folder(const std::string &path) {
-            std::scoped_lock lk(this->folders_lock);
+        std::optional<std::shared_ptr<Folder>> get_folder(const std::string &path) const {
+            std::shared_lock lk(this->folders_lock);
             auto it = this->folders.find(path);
             return (it != this->folders.end()) ? std::make_optional(it->second) : std::nullopt;
         }
 
         std::optional<std::shared_ptr<Folder>> find_folder(const std::filesystem::path &path);
 
-        bool walk(const std::filesystem::path &location, std::size_t depth, const std::function<bool(const std::filesystem::path &)> &callback_folder,
+        bool walk(const std::filesystem::path &location, std::size_t depth,
+            const std::function<bool(const std::filesystem::path &)> &callback_folder,
             const std::function<bool(const std::filesystem::path &)> &callback_file);
 
     private:
         File base;
         bool keep_raw;
-        std::mutex files_lock, folders_lock;
+        mutable std::shared_mutex files_lock, folders_lock;
         std::unordered_map<std::string, std::shared_ptr<File>>   files;
         std::unordered_map<std::string, std::shared_ptr<Folder>> folders;
 };

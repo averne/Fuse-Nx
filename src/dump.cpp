@@ -19,6 +19,7 @@
 
 #include "dump.hpp"
 
+#include "thread_pool.hpp"
 #include "vfs.hpp"
 
 namespace fnx {
@@ -36,32 +37,41 @@ fs::path operator +(const fs::path &lhs, const fs::path &rhs) {
 
 int DumpContext::run(const Options &options) {
     auto filesys = FileSystem(container, true);
-    std::vector<std::uint8_t> buf(0x100000); // 1MiB
 
-    std::function callback_folder = [&](const fs::path &path) -> bool {
+    std::mutex stdout_mtx;
+    auto worker = [&](const fs::path &path) {
+        auto dest_file = dest + path;
+
+        std::unique_lock lk(stdout_mtx);
+        std::printf("Dumping \"%s\"\n", dest_file.c_str());
+        lk.unlock();
+
+        auto src = *filesys.get_file(path);
+        auto *fp = std::fopen(dest_file.c_str(), "wb");
+        if (!fp)
+            return;
+
+        std::size_t read = 0;
+        std::vector<std::uint8_t> buf(0x400000); // 4MiB
+        for (std::size_t offset = 0; offset < src->get_size(); offset += read) {
+            read = src->read(buf.data(), buf.size(), offset);
+            std::fwrite(buf.data(), read, 1, fp);
+        }
+
+        std::fclose(fp);
+    };
+
+    auto pool = ThreadPool<fs::path>(worker);
+    pool.start_workers(options.jobs);
+
+    auto callback_folder = [&](const fs::path &path) -> bool {
         std::error_code rc;
         fs::create_directories(dest + path, rc);
         return static_cast<bool>(rc);
     };
 
-    std::function callback_file = [&](const fs::path &path) -> bool {
-        auto dest_file = dest + path;
-        std::printf("Dumping \"%s\"\n", dest_file.c_str());
-
-        auto src = *filesys.get_file(path);
-        auto *fp = std::fopen(dest_file.c_str(), "wb");
-        if (!fp)
-            return true;
-
-        std::size_t read = 0;
-        for (std::size_t offset = 0; offset < src->get_size(); offset += read) {
-            read = src->read(buf.data(), buf.size(), offset);
-            if (read != buf.size())
-                buf.resize(read);
-            std::fwrite(buf.data(), read, 1, fp);
-        }
-
-        std::fclose(fp);
+    auto callback_file = [&](const fs::path &path) -> bool {
+        pool.queue_item(path);
         return false;
     };
 
@@ -77,6 +87,7 @@ int DumpContext::run(const Options &options) {
         }
     }
 
+    pool.wait();
     return 0;
 }
 

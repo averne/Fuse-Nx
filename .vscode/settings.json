@@ -1,0 +1,12 @@
+{
+    "files.exclude": {
+        "**/build": true,
+        "**/dist": true,
+        "**/out": true,
+        "**/data": true,
+        "**/docs": true,
+        "**/env": true,
+        "**/*.egg-info": true,
+    },
+    "python.pythonPath": "env/bin/python"
+}

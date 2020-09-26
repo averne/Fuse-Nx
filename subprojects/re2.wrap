@@ -1,0 +1,7 @@
+[wrap-git]
+url = https://github.com/google/re2.git
+revision = master
+depth = 1
+patch_url = https://github.com/averne/averne/files/5245967/re2-patch.zip
+patch_filename = re2-wrap.zip
+patch_hash = 8c0d77bc19c61b296e1d04ca900365472d537a210f4cad3afc9a338e330bd2b9

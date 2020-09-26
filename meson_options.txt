@@ -1,0 +1,8 @@
+option('cryptobackend',
+    type: 'combo',
+    choices: ['gcrypt', 'mbedtls'],
+    value: 'gcrypt',
+    description: 'Library to use for cryptographic operations'
+)
+
+option('fuse', type: 'feature', value: 'enabled')

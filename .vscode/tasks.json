@@ -1,0 +1,133 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "gen",
+            "type": "shell",
+            "command": "meson",
+            "args": [
+                "build",
+                "--buildtype",
+                "debug",
+                "-Db_lto=false"
+            ],
+            "presentation": {
+                "panel": "shared",
+                "reveal": "never"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "all",
+            "type": "shell",
+            "command": "LANG=en meson compile -C build -j$(nproc)",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": {
+                "base": "$gcc",
+                "fileLocation": ["autoDetect", "${workspaceFolder}/build"]
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "clean",
+            "type": "shell",
+            "command": "meson",
+            "args": [
+                "compile",
+                "-C",
+                "build",
+                "--clean"
+            ],
+            "presentation": {
+                "panel": "shared",
+                "reveal": "never"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "unmount",
+            "type": "shell",
+            "command": "fusermount -u data/test || :",
+            "presentation": {
+                "panel": "shared",
+                "reveal": "never"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "run",
+            "dependsOn": [
+                "all",
+                "unmount"
+            ],
+            "type": "shell",
+            "command": "${workspaceFolder}/build/fuse-nx",
+            "args": [
+                "mount",
+                "-r",
+                "${workspaceFolder}/data/test.xci",
+                "data/test"
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "predebug",
+            "dependsOn": [
+                "all",
+                "unmount"
+            ]
+        },
+        {
+            "label": "bindings",
+            "type": "shell",
+            "command": "python setup.py build install",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": {
+                "base": "$gcc",
+                "fileLocation": "autoDetect"
+            },
+        },
+        {
+            "label": "bindings-clean",
+            "type": "shell",
+            "command": "python setup.py clean",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "bindings-run",
+            "type": "shell",
+            "command": "${config:python.pythonPath}",
+            "args": [
+                "scripts/list_nsp.py",
+                "data/test.nsp"
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        }
+    ]
+}

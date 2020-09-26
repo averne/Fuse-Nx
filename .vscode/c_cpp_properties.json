@@ -1,0 +1,17 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "compileCommands": "build/compile_commands.json",
+            "includePath": [
+                "${workspaceRoot}/include",
+                "/usr/include/python3.8/"
+            ],
+            "compilerPath": "/bin/clang",
+            "cStandard": "gnu11",
+            "cppStandard": "gnu++20",
+            "intelliSenseMode": "gcc-x64"
+        }
+    ],
+    "version": 4
+}

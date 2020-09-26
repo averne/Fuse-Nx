@@ -1,0 +1,58 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug (gdb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "preLaunchTask": "predebug",
+            "externalConsole": false,
+            "program": "${workspaceRoot}/build/fuse-nx",
+            "cwd": "${workspaceRoot}",
+            "args": [
+                "mount",
+                "-r",
+                "${workspaceRoot}/data/test.xci",
+                "${workspaceRoot}/data/test",
+            ],
+            "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "Attach (gdb)",
+            "type": "cppdbg",
+            "request": "attach",
+            "program": "${workspaceRoot}/env/bin/python3",
+            "processId": "${command:pickProcess}",
+            "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "Python bindings",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceRoot}/scripts/list_nsp.py",
+            "args": [
+                "data/test.nsp"
+            ],
+            "env": {},
+            "envFile": "${workspaceRoot}/env",
+            "console": "integratedTerminal",
+            "stopOnEntry": true
+        }
+    ]
+}

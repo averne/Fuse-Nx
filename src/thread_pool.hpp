@@ -41,7 +41,7 @@ class ThreadPool {
         }
 
         void start_workers(std::size_t num_workers) {
-            num_workers = std::max(1ul, num_workers);
+            num_workers = std::max(static_cast<std::size_t>(1), num_workers);
 
             this->workers.reserve(num_workers);
             for (std::size_t i = 0; i < num_workers; ++i)

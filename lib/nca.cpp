@@ -18,6 +18,7 @@
 #include <cstdlib>
 #include <algorithm>
 #include <array>
+#include <cinttypes>
 
 #include <fnx/crypto.hpp>
 
@@ -98,7 +99,7 @@ bool Nca::decrypt_titlekey() {
         tkey = crypt::TitlekeySet::get()->get_key(this->header.right_id);
     } catch (const std::out_of_range &error) {
         auto *rights_id = reinterpret_cast<const std::uint64_t *>(this->get_rights_id().data());
-        std::fprintf(stderr, "Title key for Rights ID %016lx%016lx missing\n",
+        std::fprintf(stderr, "Title key for Rights ID %" PRIx64 "%" PRIx64 " missing\n",
             __builtin_bswap64(rights_id[0]), __builtin_bswap64(rights_id[1]));
         return false;
     }
@@ -135,7 +136,8 @@ bool Nca::parse() {
             if ((enc_type == EncryptionType::None) || (enc_type == EncryptionType::AesCtr))
                 this->sections.emplace_back(entry, this->header.fs_headers[i], this->body_key, this->base->clone());
             else
-                std::fprintf(stderr, "Unsupported encryption scheme %u for section %ld\n", static_cast<std::uint8_t>(enc_type), i);
+                std::fprintf(stderr, "Unsupported encryption scheme %u for section %u\n",
+                    static_cast<std::uint8_t>(enc_type), static_cast<std::uint8_t>(i));
         }
     }
 

@@ -37,24 +37,24 @@ std::size_t File::read(void *dest, std::uint64_t size) {
     flockfile(this->fp.get());
     FNX_SCOPEGUARD([this] { funlockfile(this->fp.get()); });
 
-    fseek(this->fp.get(), this->pos, SEEK_SET);
-    auto read = fread(dest, 1, size, this->fp.get());
+    std::fseek(this->fp.get(), this->pos, SEEK_SET);
+    auto read = std::fread(dest, 1, size, this->fp.get());
     this->pos += read;
     return read;
 }
 
-std::size_t File::write(const void *src, std::size_t size) {
+std::size_t File::write(const void *src, std::uint64_t size) {
     flockfile(this->fp.get());
     FNX_SCOPEGUARD([this] { funlockfile(this->fp.get()); });
 
-    auto written = fwrite(src, 1, size, this->fp.get());
+    auto written = std::fwrite(src, 1, size, this->fp.get());
     this->pos += written;
     return written;
 }
 
 std::size_t OffsetFile::read(void *dest, std::uint64_t size) {
-    auto clamped_pos  = std::clamp(this->pos, 0l, static_cast<std::int64_t>(this->fsize));
-    auto clamped_size = std::clamp(size, 0ul, this->fsize - clamped_pos);
+    auto clamped_pos  = std::clamp(static_cast<std::uint64_t>(this->pos), static_cast<std::uint64_t>(0), this->fsize);
+    auto clamped_size = std::clamp(size, static_cast<std::uint64_t>(0), this->fsize - clamped_pos);
 
     this->pos += size;
     this->base->seek(clamped_pos + this->offset);
@@ -62,9 +62,10 @@ std::size_t OffsetFile::read(void *dest, std::uint64_t size) {
 }
 
 std::size_t CtrFile::read(void *dest, std::uint64_t size) {
-    auto aligned_pos  = utils::align_down(std::clamp(this->pos, 0l, static_cast<std::int64_t>(this->fsize)), crypt::AesCtr::block_size),
-        pos_diff = this->pos - aligned_pos;
-    auto aligned_size = utils::align_up(std::clamp(size + pos_diff, 0ul, this->fsize - aligned_pos), crypt::AesCtr::block_size);
+    auto aligned_pos  = utils::align_down(std::clamp(static_cast<std::uint64_t>(this->pos),
+        static_cast<std::uint64_t>(0), this->fsize), crypt::AesCtr::block_size), pos_diff = this->pos - aligned_pos;
+    auto aligned_size = utils::align_up(std::clamp(size + pos_diff, static_cast<std::uint64_t>(0),
+        this->fsize - aligned_pos), crypt::AesCtr::block_size);
 
     this->base->seek(aligned_pos + this->offset);
     this->cipher.set_ctr((aligned_pos + this->offset) >> 4);

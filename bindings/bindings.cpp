@@ -33,12 +33,26 @@
 
 template <typename ...Args>
 inline void Py_VarDECREF(Args &&...args) {
-    (Py_DECREF(args), ...);
+    auto decref = [](auto *obj) { Py_DECREF(obj); };
+    (decref(args), ...);
 }
 
 template <typename ...Args>
 inline void Py_VarXDECREF(Args &&...args) {
-    (Py_XDECREF(args), ...);
+    auto xdecref = [](auto *obj) { Py_DECREF(obj); };
+    (xdecref(args), ...);
+}
+
+template <typename ...Args>
+inline void Py_VarINCREF(Args &&...args) {
+    auto incref = [](auto *obj) { Py_INCREF(obj); };
+    (incref(args), ...);
+}
+
+template <typename ...Args>
+inline void Py_VarXINCREF(Args &&...args) {
+    auto xincref = [](auto *obj) { Py_XINCREF(obj); };
+    (xincref(args), ...);
 }
 
 struct PyFileBase {
@@ -99,7 +113,8 @@ static PyObject *PyFileBase_read(PyFileBase *self, PyObject **args, Py_ssize_t n
         return nullptr;
 
     FNX_SCOPEGUARD([&buffer] { PyBuffer_Release(&buffer); });
-    auto size = std::clamp(buffer.len, 0l, static_cast<Py_ssize_t>(self->ptr->size() - self->ptr->tell()));
+    auto size = std::clamp(static_cast<std::uint64_t>(buffer.len), static_cast<std::uint64_t>(0),
+        self->ptr->size() - self->ptr->tell());
     return PyLong_FromUnsignedLong(self->ptr->read(buffer.buf, size));
 }
 
@@ -168,7 +183,7 @@ struct PyPfsEntry {
 };
 
 static void PyPfsEntry_dealloc(PyPfsEntry *self) {
-    Py_XDECREF(self->name);
+    Py_VarXDECREF(self->name);
     Py_TYPE(self)->tp_free(self);
 }
 
@@ -254,12 +269,12 @@ static PyObject *PyPfs_get_entries(PyPfs *self, [[maybe_unused]] PyObject *args)
 
         obj->name = PyUnicode_FromStringAndSize(entry.name.data(), entry.name.size());
         if (!obj->name) {
-            Py_DECREF(obj);
+            Py_VarDECREF(obj);
             continue;
         }
 
         PyDict_SetItem(dict, obj->name, reinterpret_cast<PyObject *>(obj));
-        Py_DECREF(obj);
+        Py_VarDECREF(obj);
     }
 
     return dict;
@@ -329,7 +344,7 @@ struct PyHfsEntry {
 };
 
 static void PyHfsEntry_dealloc(PyHfsEntry *self) {
-    Py_XDECREF(self->name);
+    Py_VarXDECREF(self->name);
     Py_TYPE(self)->tp_free(self);
 }
 
@@ -415,12 +430,12 @@ static PyObject *PyHfs_get_entries(PyHfs *self, [[maybe_unused]] PyObject *args)
 
         obj->name = PyUnicode_FromStringAndSize(entry.name.data(), entry.name.size());
         if (!obj->name) {
-            Py_DECREF(obj);
+            Py_VarDECREF(obj);
             continue;
         }
 
         PyDict_SetItem(dict, obj->name, reinterpret_cast<PyObject *>(obj));
-        Py_DECREF(obj);
+        Py_VarDECREF(obj);
     }
 
     return dict;
@@ -654,7 +669,7 @@ static PyObject *PyRomfs_get_entries(PyRomfs *self, [[maybe_unused]] PyObject *a
 
     auto *dir_dict = PyDict_New();
     if (!dir_dict)
-        return Py_DECREF(file_dict), nullptr;
+        return Py_VarDECREF(file_dict), nullptr;
 
     std::function<bool(fnx::hac::RomFs::DirEntry *dir, PyRomfsDirEntry *parent)> walk =
     [file_dict, dir_dict, &walk](fnx::hac::RomFs::DirEntry *dir, PyRomfsDirEntry *parent) -> bool {
@@ -664,13 +679,13 @@ static PyObject *PyRomfs_get_entries(PyRomfs *self, [[maybe_unused]] PyObject *a
                 return false;
 
             obj->name   = nullptr;
-            obj->parent = reinterpret_cast<PyObject *>(parent); Py_INCREF(parent);
+            obj->parent = reinterpret_cast<PyObject *>(parent); Py_VarINCREF(parent);
             obj->offset = entry->offset;
             obj->size   = entry->size;
 
             obj->name = PyUnicode_FromStringAndSize(entry->name.data(), entry->name.size());
             if (!obj->name)
-                return Py_DECREF(obj), false;
+                return Py_VarDECREF(obj), false;
 
             PyObject_GC_Track(obj);
 
@@ -693,29 +708,29 @@ static PyObject *PyRomfs_get_entries(PyRomfs *self, [[maybe_unused]] PyObject *a
                 return false;
 
             obj->name   = obj->children = obj->files = nullptr;
-            obj->parent = reinterpret_cast<PyObject *>(parent); Py_INCREF(parent);
+            obj->parent = reinterpret_cast<PyObject *>(parent); Py_VarINCREF(parent);
 
             obj->name = PyUnicode_FromStringAndSize(entry->name.data(), entry->name.size());
             if (!obj->name)
-                return Py_DECREF(obj), false;
+                return Py_VarDECREF(obj), false;
 
             obj->children = PyList_New(0);
             if (!obj->children)
-                return Py_DECREF(obj), false;
+                return Py_VarDECREF(obj), false;
 
             obj->files = PyList_New(0);
             if (!obj->files)
-                return Py_DECREF(obj), false;
+                return Py_VarDECREF(obj), false;
 
             PyObject_GC_Track(obj);
 
             auto path_str = entry->path();
             auto *path = PyUnicode_FromStringAndSize(path_str.c_str(), path_str.size());
             if (!path)
-                return Py_DECREF(obj), false;
+                return Py_VarDECREF(obj), false;
 
             if (PyList_Append(parent->children, reinterpret_cast<PyObject *>(obj)) < 0)
-                return Py_DECREF(obj), false;
+                return Py_VarDECREF(obj), false;
 
             if (PyDict_SetItem(dir_dict, path, reinterpret_cast<PyObject *>(obj)) < 0)
                 return Py_VarDECREF(path, obj), false;
@@ -734,7 +749,7 @@ static PyObject *PyRomfs_get_entries(PyRomfs *self, [[maybe_unused]] PyObject *a
         return Py_VarDECREF(file_dict, dir_dict), nullptr;
 
     root_obj->name = root_obj->children = root_obj->files = nullptr;
-    root_obj->parent = Py_None; Py_INCREF(Py_None);
+    root_obj->parent = Py_None; Py_VarINCREF(Py_None);
 
     root_obj->name = PyUnicode_FromStringAndSize("", std::strlen(""));
     if (!root_obj->name)
@@ -897,7 +912,7 @@ static PyObject *PyNca_get_sections(PyNca *self, [[maybe_unused]] PyObject *args
             pfs->ptr = std::make_unique<fnx::hac::Pfs>(section.get_pfs().clone_base());
 
             PyList_Append(list, reinterpret_cast<PyObject *>(pfs));
-            Py_DECREF(pfs);
+            Py_VarDECREF(pfs);
         } else {
             auto *romfs = PyObject_New(PyRomfs, &PyRomfsType);
             if (!romfs)
@@ -907,7 +922,7 @@ static PyObject *PyNca_get_sections(PyNca *self, [[maybe_unused]] PyObject *args
             romfs->ptr = std::make_unique<fnx::hac::RomFs>(section.get_romfs().clone_base());
 
             PyList_Append(list, reinterpret_cast<PyObject *>(romfs));
-            Py_DECREF(romfs);
+            Py_VarDECREF(romfs);
         }
     }
 
@@ -1034,7 +1049,7 @@ static PyObject *PyXci_get_partitions(PyXci *self, [[maybe_unused]] PyObject *ar
         auto name_str = part.get_name();
         auto *name = PyUnicode_FromStringAndSize(name_str.data(), name_str.size());
         if (!name) {
-            Py_DECREF(obj);
+            Py_VarDECREF(obj);
             continue;
         }
 
@@ -1224,39 +1239,39 @@ PyMODINIT_FUNC PyInit_fnxbinds() {
     if (!m)
         goto exit;
 
-    Py_INCREF(&PyFileBaseType);
+    Py_VarINCREF(&PyFileBaseType);
     PyModule_AddObject(m, "FileBase", reinterpret_cast<PyObject *>(&PyFileBaseType));
 
-    Py_INCREF(&PyPfsEntryType);
+    Py_VarINCREF(&PyPfsEntryType);
     PyModule_AddObject(m, "PfsEntry", reinterpret_cast<PyObject *>(&PyPfsEntryType));
 
-    Py_INCREF(&PyPfsType);
+    Py_VarINCREF(&PyPfsType);
     PyModule_AddObject(m, "Pfs", reinterpret_cast<PyObject *>(&PyPfsType));
 
-    Py_INCREF(&PyHfsEntryType);
+    Py_VarINCREF(&PyHfsEntryType);
     PyModule_AddObject(m, "HfsEntry", reinterpret_cast<PyObject *>(&PyHfsEntryType));
 
-    Py_INCREF(&PyHfsType);
+    Py_VarINCREF(&PyHfsType);
     PyModule_AddObject(m, "Hfs", reinterpret_cast<PyObject *>(&PyHfsType));
 
-    Py_INCREF(&PyRomfsFileEntryType);
+    Py_VarINCREF(&PyRomfsFileEntryType);
     PyModule_AddObject(m, "RomfsFileEntry", reinterpret_cast<PyObject *>(&PyRomfsFileEntryType));
 
-    Py_INCREF(&PyRomfsDirEntryType);
+    Py_VarINCREF(&PyRomfsDirEntryType);
     PyModule_AddObject(m, "RomfsDirEntry", reinterpret_cast<PyObject *>(&PyRomfsDirEntryType));
 
-    Py_INCREF(&PyRomfsType);
+    Py_VarINCREF(&PyRomfsType);
     PyModule_AddObject(m, "Romfs", reinterpret_cast<PyObject *>(&PyRomfsType));
 
-    Py_INCREF(&PyNcaType);
+    Py_VarINCREF(&PyNcaType);
     PyModule_AddObject(m, "Nca", reinterpret_cast<PyObject *>(&PyNcaType));
 
-    Py_INCREF(&PyXciType);
+    Py_VarINCREF(&PyXciType);
     PyModule_AddObject(m, "Xci", reinterpret_cast<PyObject *>(&PyXciType));
 
     return m;
 
 exit:
-    Py_XDECREF(m);
+    Py_VarXDECREF(m);
     return nullptr;
 }

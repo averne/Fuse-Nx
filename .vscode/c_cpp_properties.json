@@ -7,7 +7,7 @@
                 "${workspaceRoot}/include",
                 "/usr/include/python3.8/"
             ],
-            "compilerPath": "/bin/clang",
+            "compilerPath": "/bin/gcc",
             "cStandard": "gnu11",
             "cppStandard": "gnu++20",
             "intelliSenseMode": "gcc-x64"

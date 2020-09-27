@@ -91,7 +91,7 @@ class FileBase {
             return this->read(std::forward<Args>(args)...);
         }
 
-        virtual std::size_t write(const void *data, std::size_t size) = 0;
+        virtual std::size_t write(const void *data, std::uint64_t size) = 0;
 
         template <typename T>
         std::size_t write(const T &src) requires (std::is_trivial_v<T>) && (!utils::Container<T>) {

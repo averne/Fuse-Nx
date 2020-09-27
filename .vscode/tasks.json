@@ -20,7 +20,10 @@
         {
             "label": "all",
             "type": "shell",
-            "command": "LANG=en meson compile -C build -j$(nproc)",
+            "command": "LANG=en meson compile -j$(nproc)",
+            "options": {
+                "cwd": "build"
+            },
             "presentation": {
                 "reveal": "always",
                 "panel": "shared",
@@ -28,7 +31,7 @@
             },
             "problemMatcher": {
                 "base": "$gcc",
-                "fileLocation": ["autoDetect", "${workspaceFolder}/build"]
+                "fileLocation": ["relative", "${workspaceFolder}/build"]
             },
             "group": {
                 "kind": "build",

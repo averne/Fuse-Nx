@@ -104,7 +104,7 @@ class CipherBase {
 #endif
         }
 
-        virtual Error decrypt(const void *src, std::size_t src_size, void *dst, std::size_t dst_size) {
+        virtual Error decrypt(const void *src, std::uint64_t src_size, void *dst, std::uint64_t dst_size) {
 #ifdef USE_GCRYPT
             return gcry_cipher_decrypt(this->handle, dst, dst_size, src, src_size);
 #else
@@ -114,7 +114,7 @@ class CipherBase {
 #endif
         }
 
-        Error decrypt(void *data, std::size_t size) { // In-place decryption
+        Error decrypt(void *data, std::uint64_t size) { // In-place decryption
 #ifdef USE_GCRYPT
             return this->decrypt(nullptr, 0, data, size);
 #else
@@ -123,12 +123,12 @@ class CipherBase {
         }
 
         template <typename T, typename U>
-        Error decrypt(const T *src, std::size_t src_size, U *dst, std::size_t dst_size)  {
+        Error decrypt(const T *src, std::uint64_t src_size, U *dst, std::uint64_t dst_size)  {
             return this->decrypt(static_cast<const void *>(src), src_size, static_cast<void *>(dst), dst_size);
         }
 
         template <typename T>
-        Error decrypt(T *data, std::size_t size) {
+        Error decrypt(T *data, std::uint64_t size) {
 #ifdef USE_GCRYPT
             return this->decrypt(nullptr, 0, static_cast<void *>(data), size);
 #else
@@ -175,11 +175,11 @@ class AesEcb final: public CipherBase<MBEDTLS_CIPHER_AES_128_ECB, AesKey> {
         AesEcb() = default;
         AesEcb(const AesKey &key): CipherBase(key) { }
 
-        virtual Error decrypt(const void *src, std::size_t src_size, void *dst, std::size_t dst_size) override {
+        virtual Error decrypt(const void *src, std::uint64_t src_size, void *dst, std::uint64_t dst_size) override {
 #ifdef USE_GCRYPT
             return gcry_cipher_decrypt(this->handle, dst, dst_size, src, src_size);
 #else
-            for (std::size_t i = 0; i < dst_size; i += CipherBase::block_size) { // In AES-ECB mode, mbedtls only decrypts one block max
+            for (std::uint64_t i = 0; i < dst_size; i += CipherBase::block_size) { // In AES-ECB mode, mbedtls only decrypts one block max
                 auto rc = mbedtls_cipher_update(&this->ctx, reinterpret_cast<const std::uint8_t *>(src) + i, CipherBase::block_size,
                     reinterpret_cast<std::uint8_t *>(dst) + i, &src_size);
                 if (rc)
@@ -246,11 +246,11 @@ class AesXtsNintendo final: public CipherBase<MBEDTLS_CIPHER_AES_128_XTS, AesXts
         constexpr static std::size_t sector_size = 0x200;
 
     public:
-        AesXtsNintendo(std::size_t sector = 0): sector(sector) { }
+        AesXtsNintendo(std::uint64_t sector = 0): sector(sector) { }
 
-        AesXtsNintendo(const AesXtsKey &key, std::size_t sector = 0): CipherBase(key), sector(sector) { }
+        AesXtsNintendo(const AesXtsKey &key, std::uint64_t sector = 0): CipherBase(key), sector(sector) { }
 
-        Error set_sector(std::size_t sector) {
+        Error set_sector(std::uint64_t sector) {
             this->sector = sector;
             std::array<std::uint64_t, 2> tweak = { 0, __builtin_bswap64(sector) }; // Nintendo uses a byteswapped tweak
 #ifdef USE_GCRYPT
@@ -260,12 +260,12 @@ class AesXtsNintendo final: public CipherBase<MBEDTLS_CIPHER_AES_128_XTS, AesXts
 #endif
         }
 
-        virtual Error decrypt(const void *src, std::size_t src_size, void *dst, std::size_t dst_size) override {
+        virtual Error decrypt(const void *src, std::uint64_t src_size, void *dst, std::uint64_t dst_size) override {
             auto *_src = reinterpret_cast<const std::uint8_t *>(src);
             auto *_dst = reinterpret_cast<std::uint8_t *>(dst);
-            std::size_t size = (!_src) ? dst_size : std::min(src_size, dst_size); // In-place decryption
+            std::uint64_t size = (!_src) ? dst_size : std::min(src_size, dst_size); // In-place decryption
 
-            for (std::size_t i = 0; i < size; i += this->sector_size) {
+            for (std::uint64_t i = 0; i < size; i += this->sector_size) {
                 if (auto rc = this->set_sector(this->sector); rc)
                     return rc;
 #ifdef USE_GCRYPT
@@ -299,7 +299,7 @@ class AesXtsNintendo final: public CipherBase<MBEDTLS_CIPHER_AES_128_XTS, AesXts
 #endif
 
     protected:
-        std::size_t sector;
+        std::uint64_t sector;
 };
 
 AesKey gen_aes_kek(const AesKey &src, const AesKey &mkey, const AesKey &kek_seed, const AesKey &key_seed);

@@ -57,12 +57,14 @@ int FuseContext::run(const Options &options) {
     FNX_SCOPEGUARD([&args] { fuse_opt_free_args(&args); });
 
     fuse_opt_add_arg(&args, "");                    // argv[0] (executable)
+    fuse_opt_add_arg(&args, mountpoint.c_str());    // argv[1] (mountpoint)
+
+    if (!options.background)
+        fuse_opt_add_arg(&args, "-f");              // Foreground
 
     for (auto &arg: options.fuse_args)
         fuse_opt_add_arg(&args, ("-o" + arg).c_str());
 
-    fuse_opt_add_arg(&args, mountpoint.c_str());    // argv[1] (mountpoint)
-    fuse_opt_add_arg(&args, "-f");                  // Foreground
     fuse_opt_add_arg(&args, "-osync_read");         // Synchronous reads
 
     s_fs = this->filesys.get();

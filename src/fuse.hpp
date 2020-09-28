@@ -32,6 +32,7 @@ class FuseContext final: public Context {
         struct Options {
             std::vector<std::string> fuse_args;
             bool                     raw_containers = false;
+            bool                     background     = false;
         };
 
     public:

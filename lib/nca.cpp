@@ -99,7 +99,7 @@ bool Nca::decrypt_titlekey() {
         tkey = crypt::TitlekeySet::get()->get_key(this->header.right_id);
     } catch (const std::out_of_range &error) {
         auto *rights_id = reinterpret_cast<const std::uint64_t *>(this->get_rights_id().data());
-        std::fprintf(stderr, "Title key for Rights ID %" PRIx64 "%" PRIx64 " missing\n",
+        std::fprintf(stderr, "Title key for Rights ID %016" PRIx64 "%016" PRIx64 " missing\n",
             __builtin_bswap64(rights_id[0]), __builtin_bswap64(rights_id[1]));
         return false;
     }

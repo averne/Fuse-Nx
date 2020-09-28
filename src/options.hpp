@@ -59,6 +59,7 @@ struct FuseOptions {
     FuseOptions(CLI::App &app) {
         this->fuse_cmd = app.add_subcommand("mount", "Mount container as filesystem");
         this->fuse_cmd->add_flag("-r,--keep-raw", this->opts.raw_containers, "Expose raw subcontainers");
+        this->fuse_cmd->add_flag("-b,--background", this->opts.background, "Operate in the background");
         this->fuse_cmd->add_option("-o", this->opts.fuse_args, "Additional arguments forwarded to FUSE");
         this->fuse_cmd->add_option("container", this->container, "Path of the container to mount")
             ->check(CLI::ExistingFile)

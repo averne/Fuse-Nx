@@ -21,14 +21,15 @@
 #include <mutex>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <utility>
 #include <fnx.hpp>
 
 namespace fnx {
 
 struct ContainerBase {
-    using FileEntry = std::pair<std::string, std::unique_ptr<io::FileBase>>;
-    using DirEntry  = std::pair<std::string, std::unique_ptr<ContainerBase>>;
+    using FileEntry = std::tuple<std::string, std::unique_ptr<io::FileBase>, bool>;
+    using DirEntry  = std::tuple<std::string, std::unique_ptr<ContainerBase>>;
 
     virtual ~ContainerBase() = default;
 

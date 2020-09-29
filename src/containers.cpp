@@ -26,7 +26,7 @@ std::vector<FileEntry> PfsContainer::read_files() {
     std::vector<FileEntry> out;
     out.reserve(this->container->get_num_entries());
     for (auto &entry: this->container->get_entries())
-        out.emplace_back(entry.name, this->container->open(entry));
+        out.emplace_back(entry.name, this->container->open(entry), true);
     return out;
 }
 
@@ -34,7 +34,7 @@ std::vector<FileEntry> HfsContainer::read_files() {
     std::vector<FileEntry> out;
     out.reserve(this->container->get_num_entries());
     for (auto &entry: this->container->get_entries())
-        out.emplace_back(entry.name, this->container->open(entry));
+        out.emplace_back(entry.name, this->container->open(entry), true);
     return out;
 }
 
@@ -46,7 +46,7 @@ std::vector<FileEntry> RomFsContainer::read_files() {
 
     this->parse_dir(dir);
     for (auto *file: dir->files)
-        out.emplace_back(file->name, this->container->open(*file));
+        out.emplace_back(file->name, this->container->open(*file), false);
     return out;
 }
 
@@ -68,9 +68,9 @@ std::vector<FileEntry> NcaContainer::read_files() {
     for (std::size_t i = 0; i < this->container->get_num_sections(); ++i) {
         auto &section = this->container->get_section(i);
         if (section.get_type() == hac::Nca::Section::Type::Pfs)
-            out.emplace_back(std::string(NcaContainer::section_names[i]) + ".nsp",   section.get_pfs().clone_base());
+            out.emplace_back(std::string(NcaContainer::section_names[i]) + ".nsp",   section.get_pfs().clone_base(), true);
         else
-            out.emplace_back(std::string(NcaContainer::section_names[i]) + ".romfs", section.get_romfs().clone_base());
+            out.emplace_back(std::string(NcaContainer::section_names[i]) + ".romfs", section.get_romfs().clone_base(), true);
     }
     return out;
 }
@@ -79,7 +79,7 @@ std::vector<FileEntry> XciContainer::read_files() {
     std::vector<FileEntry> out;
     out.reserve(this->container->get_num_partitions());
     for (auto &section: this->container->get_partitions())
-        out.emplace_back(std::string(section.get_name()) + ".hfs", section.get_hfs().clone_base());
+        out.emplace_back(std::string(section.get_name()) + ".hfs", section.get_hfs().clone_base(), true);
     return out;
 }
 

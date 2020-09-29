@@ -20,6 +20,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <memory>
+#include <mutex>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -166,9 +167,7 @@ class OffsetFile final: public FileBase {
             this->fsize = other.fsize;
         }
 
-        OffsetFile(OffsetFile &&other): base(std::move(other.base)), offset(other.offset) {
-            this->fsize = other.fsize;
-        }
+        OffsetFile(OffsetFile &&other) = default;
 
         virtual std::unique_ptr<FileBase> clone() const override {
             return std::make_unique<OffsetFile>(*this);
@@ -193,17 +192,16 @@ class CtrFile final: public FileBase {
     public:
         CtrFile() = default;
         CtrFile(std::unique_ptr<FileBase> &&base, crypt::AesCtr &&cipher, std::uint64_t size, std::int64_t offset = 0):
-                base(std::move(base)), cipher(std::move(cipher)), offset(offset) {
+                base(std::move(base)), offset(offset),
+                cipher(std::make_shared<crypt::AesCtr>(std::move(cipher))), cipher_mtx(std::make_shared<std::mutex>()) {
             this->fsize = size;
         }
 
-        CtrFile(const CtrFile &other): base(other.base->clone()), cipher(other.cipher), offset(other.offset) {
+        CtrFile(const CtrFile &other): base(other.base->clone()), offset(other.offset), cipher(other.cipher), cipher_mtx(other.cipher_mtx) {
             this->fsize = other.fsize;
         }
 
-        CtrFile(CtrFile &&other): base(std::move(other.base)), cipher(std::move(other.cipher)), offset(other.offset) {
-            this->fsize = other.fsize;
-        }
+        CtrFile(CtrFile &&other) = default;
 
         virtual std::unique_ptr<FileBase> clone() const override {
             return std::make_unique<CtrFile>(*this);
@@ -219,18 +217,19 @@ class CtrFile final: public FileBase {
         using FileBase::read;
         using FileBase::write;
 
-        crypt::AesCtr &get_cipher() {
+        std::shared_ptr<crypt::AesCtr> &get_cipher() {
             return this->cipher;
         }
 
-        const crypt::AesCtr &get_cipher() const {
+        const std::shared_ptr<crypt::AesCtr> &get_cipher() const {
             return this->cipher;
         }
 
     private:
         std::unique_ptr<FileBase> base;
-        crypt::AesCtr cipher;
-        std::size_t   offset;
+        std::size_t offset;
+        std::shared_ptr<crypt::AesCtr> cipher;
+        std::shared_ptr<std::mutex>    cipher_mtx;
 };
 
 } // namespace fnx::io

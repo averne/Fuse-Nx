@@ -77,14 +77,17 @@ void Folder::process(bool keep_raw) {
     if (!this->base && this->processed)
         return;
 
-    for (auto &&[name, file]: this->base->read_files()) {
+    for (auto &&[name, file, try_container]: this->base->read_files()) {
         auto f = std::make_shared<File>(std::move(name), std::move(file));
-        auto cont = f->make_container();
 
-        if (cont)
-            this->children.emplace_back(std::move(*cont));
+        if (try_container) {
+            if (auto cont = f->make_container(); cont)
+                this->children.emplace_back(std::move(*cont));
+            else
+                keep_raw = true;
+        }
 
-        if (!cont || keep_raw)
+        if (!try_container || keep_raw)
             this->files.emplace_back(std::move(f));
     }
 

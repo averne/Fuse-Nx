@@ -67,14 +67,15 @@ std::size_t CtrFile::read(void *dest, std::uint64_t size) {
     auto aligned_size = utils::align_up(std::clamp(size + pos_diff, static_cast<std::uint64_t>(0),
         this->fsize - aligned_pos), crypt::AesCtr::block_size);
 
+    std::scoped_lock lk(*this->cipher_mtx);
     this->base->seek(aligned_pos + this->offset);
-    this->cipher.set_ctr((aligned_pos + this->offset) >> 4);
+    this->cipher->set_ctr((aligned_pos + this->offset) >> 4);
     if (aligned_size == size) {
         this->base->read(dest, aligned_size);
-        this->cipher.decrypt(dest, size);
+        this->cipher->decrypt(dest, size);
     } else { // Sad path, data doesn't fit and we have to allocate a new buffer
         auto read = this->base->read(aligned_size);
-        this->cipher.decrypt(read);
+        this->cipher->decrypt(read);
         std::copy_n(read.begin() + pos_diff, std::min(size, read.size() - pos_diff), reinterpret_cast<std::uint8_t *>(dest));
     }
 

@@ -37,7 +37,9 @@ class FindContext final: public Context {
 
     public:
         FindContext(const std::filesystem::path &container, const std::string &pattern):
-            Context(container), pattern(pattern) { }
+                Context(container), pattern(pattern) {
+            this->filesys->set_keep_raw(true);
+        }
         int run(const Options &options);
 
     private:

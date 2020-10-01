@@ -80,14 +80,15 @@ void Folder::process(bool keep_raw) {
     for (auto &&[name, file, try_container]: this->base->read_files()) {
         auto f = std::make_shared<File>(std::move(name), std::move(file));
 
+        bool keep_file = keep_raw;
         if (try_container) {
             if (auto cont = f->make_container(); cont)
                 this->children.emplace_back(std::move(*cont));
             else
-                keep_raw = true;
+                keep_file = true;
         }
 
-        if (!try_container || keep_raw)
+        if (!try_container || keep_file)
             this->files.emplace_back(std::move(f));
     }
 

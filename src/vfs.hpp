@@ -123,8 +123,7 @@ class Folder final: public Node {
 class FileSystem {
     public:
         FileSystem() = default;
-        FileSystem(const std::filesystem::path &path, bool keep_raw = true):
-                base("", std::make_unique<io::File>(path.c_str())), keep_raw(keep_raw) {
+        FileSystem(const std::filesystem::path &path): base("", std::make_unique<io::File>(path.c_str())) {
             if (auto root = this->base.make_container(); root)
                 this->add_folder("/", std::move(*root));
         }

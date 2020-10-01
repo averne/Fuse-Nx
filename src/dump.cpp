@@ -36,8 +36,6 @@ fs::path operator +(const fs::path &lhs, const fs::path &rhs) {
 } // namespace
 
 int DumpContext::run(const Options &options) {
-    auto filesys = FileSystem(container, true);
-
     std::mutex stdout_mtx;
     auto worker = [&](const fs::path &path) {
         auto dest_file = dest + path;
@@ -46,7 +44,7 @@ int DumpContext::run(const Options &options) {
         std::printf("Dumping \"%s\"\n", dest_file.c_str());
         lk.unlock();
 
-        auto src = *filesys.get_file(path);
+        auto src = *this->filesys->get_file(path);
         auto *fp = std::fopen(dest_file.c_str(), "wb");
         if (!fp)
             return;
@@ -76,10 +74,10 @@ int DumpContext::run(const Options &options) {
     };
 
     for (auto &path: options.paths) {
-        if (auto opt = filesys.find_folder(path); opt) {
-            if (callback_folder(path) || filesys.walk(path, options.depth, callback_folder, callback_file))
+        if (auto opt = this->filesys->find_folder(path); opt) {
+            if (callback_folder(path) || this->filesys->walk(path, options.depth, callback_folder, callback_file))
                 return 1;
-        } else if (auto opt = filesys.get_file(path); opt) {
+        } else if (auto opt = this->filesys->get_file(path); opt) {
             if (callback_folder(path.parent_path()) || callback_file(path))
                 return 1;
         } else {

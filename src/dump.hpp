@@ -34,7 +34,9 @@ class DumpContext final: public Context {
 
     public:
         DumpContext(const std::filesystem::path &container, const std::filesystem::path &dest):
-            Context(container), dest(dest) { }
+                Context(container), dest(dest) {
+            this->filesys->set_keep_raw(true);
+        }
         int run(const Options &options);
 
     private:

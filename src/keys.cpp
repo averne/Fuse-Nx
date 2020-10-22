@@ -16,6 +16,7 @@
 // along with fuse-nx.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <cstdlib>
+#include <algorithm>
 #include <fstream>
 #include <utility>
 
@@ -28,9 +29,9 @@ namespace fs = std::filesystem;
 namespace {
 
 std::pair<std::string_view, std::string_view> parse_line(const std::string &line) {
-    auto first_begin  = line.find_first_not_of(' '), first_end = line.find_first_of(" =", first_begin);
-    auto second_begin = line.find_first_not_of(" =", first_end);
-    return { std::string_view(&line[first_begin], first_end - first_begin), std::string_view(&line[second_begin]) };
+    auto first_begin  = line.find_first_not_of(' '),             first_end  = line.find_first_of(" =", first_begin);
+    auto second_begin = line.find_first_not_of(" =", first_end), second_end = std::min(line.find_first_of(" \r\n", second_begin), line.size());
+    return { std::string_view(&line[first_begin], first_end - first_begin), std::string_view(&line[second_begin], second_end - second_begin) };
 }
 
 } // namespace

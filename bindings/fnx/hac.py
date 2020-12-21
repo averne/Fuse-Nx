@@ -91,7 +91,7 @@ class Pfs:
         if not self.valid:
             raise RuntimeError("Invalid Pfs")
         if not self.base.parse():
-            RuntimeError("Failed to parse the Pfs")
+            raise RuntimeError("Failed to parse the Pfs")
         self._entries = self.base.get_entries()
         self.parsed = True
 
@@ -152,7 +152,7 @@ class Hfs:
         if not self.valid:
             raise RuntimeError("Invalid Hfs")
         if not self.base.parse():
-            RuntimeError("Failed to parse the Hfs")
+            raise RuntimeError("Failed to parse the Hfs")
         self._entries = self.base.get_entries()
         self.parsed = True
 
@@ -213,7 +213,7 @@ class Romfs:
         if not self.valid:
             raise RuntimeError("Invalid RomFs")
         if not self.base.parse():
-            RuntimeError("Failed to parse the RomFs")
+            raise RuntimeError("Failed to parse the RomFs")
         self._file_entries, self._dir_entries = self.base.get_entries()
         self.parsed = True
 
@@ -306,7 +306,7 @@ class Nca:
         if not self.valid:
             raise RuntimeError("Invalid Nca")
         if not self.base.parse():
-            RuntimeError("Failed to parse the Nca")
+            raise RuntimeError("Failed to parse the Nca")
         self._sections = []
         for sec in self.base.get_sections():
             if isinstance(sec, fnxbinds.Pfs):
@@ -394,7 +394,7 @@ class Xci:
         if not self.valid:
             raise RuntimeError("Invalid Xci")
         if not self.base.parse():
-            RuntimeError("Failed to parse the Xci")
+            raise RuntimeError("Failed to parse the Xci")
         self._partitions = {}
         for name, part in self.base.get_partitions().items():
             self._partitions[name] = Hfs(part)

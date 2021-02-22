@@ -6,6 +6,7 @@ Mount Nintendo Switch archive as filesystems, and find/extract files from them.
   <img src="https://user-images.githubusercontent.com/45773016/94306398-2e388780-ff73-11ea-8595-fc8425afd7a7.png" height="250" />
   <img src="https://user-images.githubusercontent.com/45773016/94306638-a69f4880-ff73-11ea-984d-3fc893990064.png" height="250" />
   <img src="https://user-images.githubusercontent.com/45773016/94306437-3db7d080-ff73-11ea-97f8-228ea32f3739.png" height="250" />
+  <img src="https://user-images.githubusercontent.com/45773016/109013087-07fa4d80-76b3-11eb-94ab-082af0c92214.png" height="250" />
 </p>
 
 ## Supported formats
@@ -23,7 +24,9 @@ Refer to the built-in help (`-h`/`--help`). You can find help on a specific subc
 
 ### Windows
 
-Windows is supported via WSL. To access the filesystem through the explorer, you will need to pass the `-o allow_other` flag to FUSE, and add `user_allow_other` to `/etc/fuse.conf`.
+Windows is supported via:
+  - [WinFsp](http://www.secfs.net/winfsp/rel/): make sure that `winfsp-x64.dll` (found in `C:\Program Files (x86)\WinFsp\bin` after installing) is present in the same directory as the executable;
+  - WSL: To access the filesystem through the explorer, you will need to pass the `-o allow_other` flag to FUSE when mounting, and add `user_allow_other` to `/etc/fuse.conf`.
 
 ## Project layout
 

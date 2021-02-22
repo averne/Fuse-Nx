@@ -5,7 +5,7 @@
             "compileCommands": "build/compile_commands.json",
             "includePath": [
                 "${workspaceRoot}/include",
-                "/usr/include/python3.8/"
+                "/usr/include/python3.9/"
             ],
             "compilerPath": "/bin/gcc",
             "cStandard": "gnu11",

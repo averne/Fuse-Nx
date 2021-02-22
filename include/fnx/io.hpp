@@ -117,7 +117,7 @@ class FileBase {
 
 class File final: public FileBase {
     public:
-        File(const std::string_view &path, const char *mode = "r") {
+        File(const std::string_view &path, const char *mode = "rb") {
             this->open(path, mode);
         }
 

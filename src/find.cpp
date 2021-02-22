@@ -15,11 +15,17 @@
 // You should have received a copy of the GNU General Public License
 // along with fuse-nx.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <fnmatch.h>
 #include <functional>
 #include <re2/re2.h>
 
+#ifdef __MINGW32__
+#   include <shlwapi.h>
+#else
+#   include <fnmatch.h>
+#endif
+
 #include "vfs.hpp"
+#include "utils.hpp"
 
 #include "find.hpp"
 
@@ -46,7 +52,7 @@ int FindContext::run(const Options &options) {
 
         callback = [&](const std::filesystem::path &path) -> bool {
             if (RE2::FullMatch(path.filename().string(), *regex)) {
-                std::printf(format.c_str(), path.c_str());
+                std::printf(format.c_str(), FileSystem::normalize_path(PATHSTR(path)).c_str());
                 if (options.null_terminator)
                     std::putchar(0);
                 ++cur_count;
@@ -55,8 +61,12 @@ int FindContext::run(const Options &options) {
         };
     } else {
         callback = [&, this](const std::filesystem::path &path) -> bool {
+#ifdef __MINGW32__
+            if (PathMatchSpecA(path.filename().string().c_str(), this->pattern.c_str())) {
+#else
             if (fnmatch(this->pattern.c_str(), path.filename().c_str(), options.case_insensitive ? FNM_CASEFOLD : 0) == 0) {
-                std::printf(format.c_str(), path.c_str());
+#endif
+                std::printf(format.c_str(), FileSystem::normalize_path(PATHSTR(path)).c_str());
                 if (options.null_terminator)
                     std::putchar(0);
                 ++cur_count;
@@ -67,7 +77,8 @@ int FindContext::run(const Options &options) {
 
     auto opt = this->filesys->find_folder(options.start);
     if (!opt) {
-        std::fprintf(stderr, "Could not find path \"%s\" inside container \"%s\"\n", options.start.c_str(), container.c_str());
+        std::fprintf(stderr, "Could not find path \"%s\" inside container \"%s\"\n",
+            PATHSTR(options.start).c_str(), PATHSTR(container).c_str());
         return 1;
     }
 

@@ -37,7 +37,11 @@ std::pair<std::string_view, std::string_view> parse_line(const std::string &line
 } // namespace
 
 fs::path get_keyset_path(crypt::KeySetType type) {
+#ifdef __MINGW32__
+    fs::path path = getenv("USERPROFILE");
+#else
     fs::path path = getenv("HOME");
+#endif
     path /= ".switch";
 
     switch (type) {

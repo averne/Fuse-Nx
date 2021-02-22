@@ -53,7 +53,7 @@ std::optional<std::shared_ptr<Folder>> File::make_container() const {
 }
 
 std::optional<std::shared_ptr<Folder>> FileSystem::process_dir(const fs::path &path) {
-    auto opt = this->get_folder(path);
+    auto opt = this->get_folder(FileSystem::normalize_path(PATHSTR(path)));
     if (!opt)
         return opt;
 
@@ -121,7 +121,7 @@ bool FileSystem::walk(const fs::path &location, std::size_t depth, const std::fu
     if (!depth)
         return false;
 
-    auto opt = this->get_folder(location);
+    auto opt = this->get_folder(FileSystem::normalize_path(PATHSTR(location)));
     if (!opt)
         return true;
 

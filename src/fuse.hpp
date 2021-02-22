@@ -25,6 +25,11 @@
 
 #include "context.hpp"
 
+#ifdef FUSE_WINFSP_FUSE_H_INCLUDED
+#   undef stat
+#   define stat fuse_stat
+#endif
+
 namespace fnx {
 
 class FuseContext final: public Context {
@@ -41,8 +46,11 @@ class FuseContext final: public Context {
 
     private:
         static int   wrap_getattr(const char *, struct stat *);
+        static int   wrap_opendir(const char *, struct fuse_file_info *);
         static int   wrap_readdir(const char *, void *, fuse_fill_dir_t, off_t, struct fuse_file_info *);
-        static int   wrap_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *info);
+        static int   wrap_releasedir(const char *, struct fuse_file_info *);
+        static int   wrap_open(const char *, struct fuse_file_info *);
+        static int   wrap_read(const char *, char *, size_t, off_t, struct fuse_file_info *);
         static void *wrap_init(struct fuse_conn_info *);
 
     private:

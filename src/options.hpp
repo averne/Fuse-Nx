@@ -59,7 +59,9 @@ struct FuseOptions {
     FuseOptions(CLI::App &app) {
         this->fuse_cmd = app.add_subcommand("mount", "Mount container as filesystem");
         this->fuse_cmd->add_flag("-r,--keep-raw", this->opts.raw_containers, "Expose raw subcontainers");
+#ifndef __MINGW32__
         this->fuse_cmd->add_flag("-b,--background", this->opts.background, "Operate in the background");
+#endif
         this->fuse_cmd->add_option("-o", this->opts.fuse_args, "Additional arguments forwarded to FUSE");
         this->fuse_cmd->add_option("container", this->container, "Path of the container to mount")
             ->check(CLI::ExistingFile)
@@ -81,7 +83,9 @@ struct FindOptions {
     FindOptions(CLI::App &app) {
         this->find_cmd = app.add_subcommand("find", "Find file or folder in archive and print its full path");
         this->find_cmd->add_flag("-e,--regex", this->opts.is_regex, "Treat pattern as regular expression");
+#ifndef __MINGW32__
         this->find_cmd->add_flag("-i,--ignore-case", this->opts.case_insensitive, "Ignore case distinctions");
+#endif
         this->find_cmd->add_option("-m,--max-count", this->opts.max_count, "Stop after N matches")
             ->type_name("N")
             ->check(CLI::NonNegativeNumber);
@@ -95,6 +99,7 @@ struct FindOptions {
             ->check(CLI::ExistingFile)
             ->required();
         this->find_cmd->add_option("path", this->opts.start, "Path to search in inside the container");
+        this->find_cmd->allow_windows_style_options(false);
     }
 
     int run() {
@@ -122,6 +127,7 @@ struct DumpOptions {
             ->check(CLI::ExistingDirectory)
             ->required();
         this->dump_cmd->add_option("paths", this->opts.paths, "Paths of the files and folder to dump inside the container");
+        this->dump_cmd->allow_windows_style_options(false);
     }
 
     int run() {

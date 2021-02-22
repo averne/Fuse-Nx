@@ -15,14 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with fuse-nx.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <cstdio>
-#include <filesystem>
-#include <gcrypt.h>
 #include <CLI/CLI.hpp>
-#include <fnx.hpp>
 
-#include "vfs.hpp"
-#include "keys.hpp"
 #include "options.hpp"
 
 int main(int argc, char **argv) {

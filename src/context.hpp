@@ -20,6 +20,7 @@
 #include <filesystem>
 
 #include "vfs.hpp"
+#include "utils.hpp"
 
 namespace fnx {
 
@@ -27,7 +28,7 @@ struct Context {
     Context(const std::filesystem::path &container): container(container) {
         this->filesys = std::make_unique<FileSystem>(container);
         if (auto dir = this->filesys->get_folder("/"); !dir) {
-            std::fprintf(stderr, "Unrecognized file type for \"%s\"\n", container.c_str());
+            std::fprintf(stderr, "Unrecognized file type for \"%s\"\n", PATHSTR(container).c_str());
             std::exit(EXIT_FAILURE);
         }
     }

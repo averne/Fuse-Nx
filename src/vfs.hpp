@@ -27,11 +27,11 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
-#include <fuse.h>
 
 #include <fnx.hpp>
 
 #include "containers.hpp"
+#include "utils.hpp"
 
 namespace fnx {
 
@@ -123,7 +123,7 @@ class Folder final: public Node {
 class FileSystem {
     public:
         FileSystem() = default;
-        FileSystem(const std::filesystem::path &path): base("", std::make_unique<io::File>(path.c_str())) {
+        FileSystem(const std::filesystem::path &path): base("", std::make_unique<io::File>(PATHSTR(path).c_str())) {
             if (auto root = this->base.make_container(); root)
                 this->add_folder("/", std::move(*root));
         }
@@ -134,14 +134,21 @@ class FileSystem {
 
         std::optional<std::shared_ptr<Folder>> process_dir(const std::filesystem::path &path);
 
+        static inline std::string &&normalize_path(std::string &&path) {
+#ifdef __MINGW32__
+            std::replace(path.begin(), path.end(), '\\', '/');
+#endif
+            return std::move(path);
+        }
+
         void add_file(const std::filesystem::path &&path, std::shared_ptr<File> node) {
             std::unique_lock lk(this->files_lock);
-            this->files.try_emplace(std::move(path), std::move(node));
+            this->files.try_emplace(FileSystem::normalize_path(PATHSTR(path)), std::move(node));
         }
 
         void add_folder(const std::filesystem::path &&path, std::shared_ptr<Folder> node) {
             std::unique_lock lk(this->folders_lock);
-            this->folders.try_emplace(std::move(path), std::move(node));
+            this->folders.try_emplace(FileSystem::normalize_path(PATHSTR(path)), std::move(node));
         }
 
         std::optional<std::shared_ptr<File>> get_file(const std::string &path) const {

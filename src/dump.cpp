@@ -17,10 +17,11 @@
 
 #include <functional>
 
-#include "dump.hpp"
-
 #include "thread_pool.hpp"
 #include "vfs.hpp"
+#include "utils.hpp"
+
+#include "dump.hpp"
 
 namespace fnx {
 
@@ -41,11 +42,11 @@ int DumpContext::run(const Options &options) {
         auto dest_file = dest + path;
 
         std::unique_lock lk(stdout_mtx);
-        std::printf("Dumping \"%s\"\n", dest_file.c_str());
+        std::printf("Dumping \"%s\"\n", PATHSTR(dest_file).c_str());
         lk.unlock();
 
-        auto src = *this->filesys->get_file(path);
-        auto *fp = std::fopen(dest_file.c_str(), "wb");
+        auto src = *this->filesys->get_file(FileSystem::normalize_path(PATHSTR(path)));
+        auto *fp = std::fopen(PATHSTR(dest_file).c_str(), "wb");
         if (!fp)
             return;
 
@@ -77,11 +78,12 @@ int DumpContext::run(const Options &options) {
         if (auto opt = this->filesys->find_folder(path); opt) {
             if (callback_folder(path) || this->filesys->walk(path, options.depth, callback_folder, callback_file))
                 return 1;
-        } else if (auto opt = this->filesys->get_file(path); opt) {
+        } else if (auto opt = this->filesys->get_file(FileSystem::normalize_path(PATHSTR(path))); opt) {
             if (callback_folder(path.parent_path()) || callback_file(path))
                 return 1;
         } else {
-            std::fprintf(stderr, "Could not find path \"%s\" inside container \"%s\"\n", path.c_str(), container.c_str());
+            std::fprintf(stderr, "Could not find path \"%s\" inside container \"%s\"\n",
+                PATHSTR(path).c_str(), PATHSTR(container).c_str());
         }
     }
 

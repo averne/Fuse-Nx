@@ -26,6 +26,30 @@
             ]
         },
         {
+            "name": "Debug (gdb) (windows)",
+            "type": "cppdbg",
+            "request": "launch",
+            "preLaunchTask": "predebug",
+            "externalConsole": false,
+            "program": "${workspaceRoot}/build/fuse-nx.exe",
+            "cwd": "${workspaceRoot}",
+            "args": [
+                "mount",
+                "-r",
+                "${workspaceRoot}/data/test.xci",
+                "${workspaceRoot}/data/test",
+            ],
+            "MIMode": "gdb",
+            "miDebuggerPath": "C:\\msys64\\mingw64\\bin\\gdb.exe",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
             "name": "Attach (gdb)",
             "type": "cppdbg",
             "request": "attach",

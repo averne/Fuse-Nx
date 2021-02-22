@@ -15,7 +15,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Fuse-Nx.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <cstring>
+#include <cinttypes>
+
 #include <fnx/io.hpp>
+
+#ifdef __MINGW32__
+#   define fseek fseeko64
+#endif
 
 namespace fnx::io {
 
@@ -34,18 +41,46 @@ std::uint64_t File::update_size() {
 }
 
 std::size_t File::read(void *dest, std::uint64_t size) {
+#ifdef __MINGW32__
+    _lock_file(this->fp.get());
+#else
     flockfile(this->fp.get());
-    FNX_SCOPEGUARD([this] { funlockfile(this->fp.get()); });
+#endif
 
-    std::fseek(this->fp.get(), this->pos, SEEK_SET);
+    FNX_SCOPEGUARD([this] {
+#ifdef __MINGW32__
+        _unlock_file(this->fp.get());
+#else
+        funlockfile(this->fp.get());
+#endif
+    });
+
+    if (auto rc = fseek(this->fp.get(), this->pos, SEEK_SET); rc != 0)
+        std::fprintf(stderr, "Failed to seek in %s: %d (%d -> %s)\n", this->path.c_str(), rc, errno, std::strerror(errno));
+
     auto read = std::fread(dest, 1, size, this->fp.get());
+    if (read != size)
+        std::fprintf(stderr, "Failed to read %s at %#" PRIx64 " (expected %#" PRIx64 ", got %#" PRIx64 "): %d (%s), %d (%s)\n",
+            this->path.c_str(), this->pos, size, read, std::ferror(this->fp.get()), std::strerror(std::ferror(this->fp.get())),
+            errno, std::strerror(errno));
     this->pos += read;
     return read;
 }
 
 std::size_t File::write(const void *src, std::uint64_t size) {
+#ifdef __MINGW32__
+    _lock_file(this->fp.get());
+#else
     flockfile(this->fp.get());
-    FNX_SCOPEGUARD([this] { funlockfile(this->fp.get()); });
+#endif
+
+    FNX_SCOPEGUARD([this] {
+#ifdef __MINGW32__
+        _unlock_file(this->fp.get());
+#else
+        funlockfile(this->fp.get());
+#endif
+    });
 
     auto written = std::fwrite(src, 1, size, this->fp.get());
     this->pos += written;

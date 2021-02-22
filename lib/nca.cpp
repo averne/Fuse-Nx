@@ -16,9 +16,9 @@
 // along with Fuse-Nx.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <cstdlib>
+#include <cinttypes>
 #include <algorithm>
 #include <array>
-#include <cinttypes>
 
 #include <fnx/crypto.hpp>
 

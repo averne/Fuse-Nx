@@ -1,0 +1,106 @@
+on: [push, pull_request]
+
+jobs:
+  main:
+    strategy:
+      fail-fast: false
+      matrix:
+        job_name: ['linux', 'windows']
+
+        include:
+        - job_name: linux
+          os: ubuntu-latest
+          shell: bash {0}
+
+        - job_name: windows
+          os: windows-latest
+          shell: msys2 {0}
+
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+
+    name: main - ${{ matrix.job_name }}
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: msys2/setup-msys2@v2
+      if: matrix.os == 'windows-latest'
+      with:
+        path-type: inherit
+        msystem: MINGW64
+        update: true
+        install: mingw-w64-x86_64-gcc mingw-w64-x86_64-make
+
+    - run: choco install -y winfsp
+      if: matrix.os == 'windows-latest'
+      shell: powershell
+
+    - run: |
+        sudo apt install -y libfuse-dev libgcrypt-dev libre2-dev gcc-10 g++-10
+        echo CC=gcc-10  >> $GITHUB_ENV
+        echo CXX=g++-10 >> $GITHUB_ENV
+      if: matrix.os == 'ubuntu-latest'
+
+    - uses: actions/checkout@v1
+
+    - uses: actions/setup-python@v1
+      with:
+        python-version: '3.x'
+
+    - run: pip install meson ninja
+
+    - run: meson setup build
+
+    - run: meson compile -C build -v
+
+    - uses: actions/upload-artifact@v1
+      if: failure()
+      with:
+        name: compile-log
+        path: build/meson-logs/meson-log.txt
+
+  bindings:
+    strategy:
+      fail-fast: false
+      matrix:
+        job_name: ['linux', 'windows']
+
+        include:
+        - job_name: linux
+          os: ubuntu-latest
+          shell: bash {0}
+
+        - job_name: windows
+          os: windows-latest
+          shell: msys2 {0}
+
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+
+    name: bindings - ${{ matrix.job_name }}
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: msys2/setup-msys2@v2
+      if: matrix.os == 'windows-latest'
+      with:
+        msystem: MINGW64
+        update: true
+        install: mingw-w64-x86_64-gcc mingw-w64-x86_64-python mingw-w64-x86_64-python-setuptools mingw-w64-x86_64-libgcrypt
+
+    - run: |
+        sudo apt install -y libgcrypt-dev gcc-10 g++-10
+        echo CC=gcc-10  >> $GITHUB_ENV
+        echo CXX=g++-10 >> $GITHUB_ENV
+      if: matrix.os == 'ubuntu-latest'
+
+    - uses: actions/setup-python@v1
+      if: matrix.os == 'ubuntu-latest'
+      with:
+        python-version: '3.x'
+
+    - uses: actions/checkout@v1
+
+    - run: python setup.py build

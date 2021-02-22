@@ -19,6 +19,10 @@
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+#include "utils.hpp"
 
 #include "fuse.hpp"
 
@@ -38,34 +42,41 @@ FuseContext::FuseContext(const std::filesystem::path &container, std::filesystem
         Context(container), mountpoint(mountpoint) {
     if (this->mountpoint.empty())
         this->mountpoint = container.parent_path() / container.stem();
+#ifndef __MINGW32__
     std::filesystem::create_directories(this->mountpoint);
+#endif
 }
 
 int FuseContext::run(const Options &options) {
     this->filesys->set_keep_raw(options.raw_containers);
 
     auto dir = this->filesys->get_folder("/");
-    std::printf("Mounting \"%s\" to \"%s\" as %s\n", this->container.c_str(),
-        this->mountpoint.c_str(), (*dir)->get_container_name().data());
+    std::printf("Mounting \"%s\" to \"%s\" as %s\n", PATHSTR(this->container).c_str(),
+        PATHSTR(this->mountpoint).c_str(), (*dir)->get_container_name().data());
 
     this->ops.getattr = FuseContext::wrap_getattr;
     this->ops.readdir = FuseContext::wrap_readdir;
     this->ops.read    = FuseContext::wrap_read;
     this->ops.init    = FuseContext::wrap_init;
 
+#ifdef __MINGW32__
+    this->ops.opendir = FuseContext::wrap_opendir;
+    this->ops.open    = FuseContext::wrap_open;
+#endif
+
     struct fuse_args args = FUSE_ARGS_INIT(0, nullptr);
     FNX_SCOPEGUARD([&args] { fuse_opt_free_args(&args); });
 
-    fuse_opt_add_arg(&args, "");                    // argv[0] (executable)
-    fuse_opt_add_arg(&args, mountpoint.c_str());    // argv[1] (mountpoint)
+    fuse_opt_add_arg(&args, "");                            // argv[0] (executable)
+    fuse_opt_add_arg(&args, PATHSTR(mountpoint).c_str());   // argv[1] (mountpoint)
 
     if (!options.background)
-        fuse_opt_add_arg(&args, "-f");              // Foreground
+        fuse_opt_add_arg(&args, "-f");                      // Foreground
 
     for (auto &arg: options.fuse_args)
         fuse_opt_add_arg(&args, ("-o" + arg).c_str());
 
-    fuse_opt_add_arg(&args, "-osync_read");         // Synchronous reads
+    fuse_opt_add_arg(&args, "-osync_read");                 // Synchronous reads
 
     s_fs = this->filesys.get();
 	return fuse_main(args.argc, args.argv, &this->ops, nullptr);
@@ -91,6 +102,11 @@ int FuseContext::wrap_getattr(const char *path, struct stat *stbuf) {
     return 0;
 }
 
+int FuseContext::wrap_opendir(const char *path, struct fuse_file_info *info) {
+    FNX_UNUSED(info);
+    return get_fs().get_folder(path) ? 0 : -ENOENT;
+}
+
 int FuseContext::wrap_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *info) {
     FNX_UNUSED(offset, info);
     auto &fs = get_fs();
@@ -111,6 +127,11 @@ int FuseContext::wrap_readdir(const char *path, void *buf, fuse_fill_dir_t fille
     }
 
     return 0;
+}
+
+int FuseContext::wrap_open(const char *path, struct fuse_file_info *info) {
+    FNX_UNUSED(info);
+    return get_fs().get_file(path) ? 0 : -ENOENT;
 }
 
 int FuseContext::wrap_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *info) {

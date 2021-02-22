@@ -20,9 +20,12 @@
         {
             "label": "all",
             "type": "shell",
-            "command": "LANG=en meson compile -j$(nproc)",
+            "command": "meson compile",
             "options": {
-                "cwd": "build"
+                "cwd": "build",
+                "env": {
+                    "LANG": "en",
+                }
             },
             "presentation": {
                 "reveal": "always",
@@ -58,6 +61,9 @@
             "label": "unmount",
             "type": "shell",
             "command": "fusermount -u data/test || :",
+            "windows": {
+                "command": "[void]"
+            },
             "presentation": {
                 "panel": "shared",
                 "reveal": "never"

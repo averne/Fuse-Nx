@@ -33,14 +33,21 @@ else
     exe_deps += crypto_dep
 endif
 
-if get_option('fuse').enabled()
-    exe_deps += dependency('fuse')
+if host_machine.system() == 'windows'
+    exe_deps += declare_dependency(include_directories: include_directories('C:/Program Files (x86)/WinFsp/inc/fuse'))
+    exe_deps += meson.get_compiler('cpp').find_library('winfsp-x64', dirs: 'C:/Program Files (x86)/WinFsp/lib', static: true)
+else
+    exe_deps += dependency('fuse', required: true)
     add_project_arguments('-DFUSE_USE_VERSION=26', language: ['c', 'cpp'])
 endif
 
 cli11 = subproject('CLI11')
 exe_deps += cli11.get_variable('CLI11_dep')
 exe_deps += dependency('re2', fallback: ['re2', 're2_dep'])
+
+if host_machine.system() == 'windows'
+    exe_deps += meson.get_compiler('cpp').find_library('Shlwapi', required: true)
+endif
 
 lib_inc = include_directories('include')
 lib_src = []
@@ -51,8 +58,14 @@ subdir('src')
 
 fnx_lib = library('fnx',
     lib_src,
-    include_directories: lib_inc
+    include_directories: lib_inc,
+    dependencies: crypto_dep,
 )
+
+exe_ldargs = ['-Wl,--gc-sections']
+if host_machine.system() == 'windows'
+    exe_ldargs += ['-static', '-static-libgcc']
+endif
 
 executable('fuse-nx',
     exe_src,
@@ -60,6 +73,6 @@ executable('fuse-nx',
     dependencies: exe_deps,
     link_with: fnx_lib,
     cpp_args: '-std=gnu++20', # re2 pkg-config overrides the standard version to c++11
-    link_args: '-Wl,--gc-sections',
+    link_args: exe_ldargs,
     install: true,
 )

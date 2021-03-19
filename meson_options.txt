@@ -4,5 +4,3 @@ option('cryptobackend',
     value: 'gcrypt',
     description: 'Library to use for cryptographic operations'
 )
-
-option('fuse', type: 'feature', value: 'enabled')

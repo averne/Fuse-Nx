@@ -134,7 +134,7 @@ bool Nca::parse() {
         if (auto entry = this->header.fs_entries[i]; entry.media_start_offset != 0) { // Section exists
             auto enc_type = this->header.fs_headers[i].encryption_type;
             if ((enc_type == EncryptionType::None) || (enc_type == EncryptionType::AesCtr))
-                this->sections.emplace_back(entry, this->header.fs_headers[i], this->body_key, this->base->clone());
+                this->sections.emplace_back(entry, this->header.fs_headers[i], this->body_key, this->clone_base());
             else
                 std::fprintf(stderr, "Unsupported encryption scheme %u for section %u\n",
                     static_cast<std::uint8_t>(enc_type), static_cast<std::uint8_t>(i));

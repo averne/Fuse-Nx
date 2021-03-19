@@ -139,7 +139,7 @@ RomFs::FileEntry *RomFs::find_file(const std::string_view &path) {
 }
 
 std::unique_ptr<io::OffsetFile> RomFs::open(const FileEntry &entry) const {
-    return std::make_unique<io::OffsetFile>(this->base->clone(), entry.size, entry.offset + this->header.file_dat_off);
+    return std::make_unique<io::OffsetFile>(this->clone_base(), entry.size, entry.offset + this->header.file_dat_off);
 }
 
 void RomFs::read_tables() {

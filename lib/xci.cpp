@@ -68,7 +68,7 @@ bool Xci::parse() {
             continue;
 
         this->partitions.emplace_back(Partition(it->second,
-            std::make_unique<io::OffsetFile>(this->base->clone(), entry.size, entry.offset + data_offset)));
+            std::make_unique<io::OffsetFile>(this->clone_base(), entry.size, entry.offset + data_offset)));
     }
 
     return true;

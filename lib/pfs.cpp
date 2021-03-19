@@ -52,7 +52,7 @@ bool Pfs::parse() {
 }
 
 std::unique_ptr<io::OffsetFile> Pfs::open(const Entry &entry) const {
-    return std::make_unique<io::OffsetFile>(this->base->clone(), entry.size, entry.offset + this->data_offset);
+    return std::make_unique<io::OffsetFile>(this->clone_base(), entry.size, entry.offset + this->data_offset);
 }
 
 } // namespace fnx::hac

@@ -105,7 +105,7 @@ std::size_t CtrFile::read(void *dest, std::uint64_t size) {
     std::scoped_lock lk(*this->cipher_mtx);
     this->base->seek(aligned_pos + this->offset);
     this->cipher->set_ctr((aligned_pos + this->offset) >> 4);
-    if (aligned_size == size) {
+    if (aligned_size <= size) {
         this->base->read(dest, aligned_size);
         this->cipher->decrypt(dest, size);
     } else { // Sad path, data doesn't fit and we have to allocate a new buffer

@@ -19,6 +19,11 @@
 
 #include "options.hpp"
 
+#ifdef __MINGW32__
+// Disable globbing
+int _CRT_glob = 0;
+#endif
+
 int main(int argc, char **argv) {
     auto opts = fnx::ProgramOptions("Fuse-Nx v" FUSENX_VERSION "\nBuilt on: " __DATE__ " " __TIME__);
     CLI11_PARSE(opts.app, argc, argv);

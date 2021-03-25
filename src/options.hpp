@@ -24,6 +24,7 @@
 #include "dump.hpp"
 #include "find.hpp"
 #include "fuse.hpp"
+#include "list.hpp"
 #include "keys.hpp"
 
 namespace fnx {
@@ -135,12 +136,32 @@ struct DumpOptions {
     }
 };
 
+struct ListOptions {
+    CLI::App             *list_cmd;
+    std::filesystem::path container;
+    ListContext::Options  opts;
+
+    ListOptions(CLI::App &app) {
+        this->list_cmd = app.add_subcommand("list", "List contents of container");
+        this->list_cmd->add_option("-d,--depth", this->opts.depth, "Stop after N levels into the filesystem hierarchy")
+            ->type_name("N")
+            ->check(CLI::NonNegativeNumber);
+        this->list_cmd->add_option("container", this->container, "Path of the container to mount")
+            ->check(CLI::ExistingFile)
+            ->required();
+    }
+
+    int run() {
+        return ListContext(this->container).run(this->opts);
+    }
+};
+
 class ProgramOptions {
     public:
         template <typename ...Args>
         ProgramOptions(Args &&...args):
                 app(std::forward<Args>(args)...),
-                keyopts(this->app), fuseopts(this->app), findopts(this->app), dumpopts(this->app) {
+                keyopts(this->app), fuseopts(this->app), findopts(this->app), dumpopts(this->app), listopts(this->app) {
             this->app.set_help_all_flag("--help-all", "Expand all help");
             this->app.require_subcommand(1);
         }
@@ -153,6 +174,8 @@ class ProgramOptions {
                 return this->findopts.run();
             else if (this->dumpopts.dump_cmd->parsed())
                 return this->dumpopts.run();
+            else if (this->listopts.list_cmd->parsed())
+                return this->listopts.run();
             return 0;
         }
 
@@ -162,6 +185,7 @@ class ProgramOptions {
         FuseOptions fuseopts;
         FindOptions findopts;
         DumpOptions dumpopts;
+        ListOptions listopts;
 };
 
 } // namespace fnx

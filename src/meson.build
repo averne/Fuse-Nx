@@ -4,6 +4,7 @@ exe_src += files(
     'find.cpp',
     'fuse.cpp',
     'keys.cpp',
+    'list.cpp',
     'main.cpp',
     'vfs.cpp',
 )

@@ -2,6 +2,3 @@
 url = https://github.com/ARMmbed/mbedtls.git
 revision = development
 depth = 1
-patch_url = https://github.com/averne/averne/files/5207289/mbedtls-patch.zip
-patch_filename = mbedtls-wrap.zip
-patch_hash = c077cb2da4689cd6b3a86e997b7d4f78aaeb4080452d3488883d4d466803b7d5

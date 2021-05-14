@@ -14,6 +14,8 @@ project('Fuse-NX', ['c', 'cpp'],
     version: '1.0.0',
 )
 
+cmake = import('cmake')
+
 add_global_arguments('-ffunction-sections', language: ['c', 'cpp'])
 add_global_arguments('-fdata-sections', language: ['c', 'cpp'])
 add_project_arguments('-fno-rtti', language: ['c', 'cpp'])
@@ -21,17 +23,15 @@ add_project_arguments('-DFUSENX_VERSION="@0@"'.format(meson.project_version()), 
 
 exe_deps = []
 
-if get_option('cryptobackend') == 'mbedtls'
-    exe_deps += dependency('mbedtls', fallback: ['mbedtls', 'mbedtls_dep'])
+crypto_dep = dependency('libgcrypt', required: false)
+if not crypto_dep.found() or get_option('cryptobackend') == 'mbedtls'
+    opts = cmake.subproject_options()
+    opts.add_cmake_defines({'ENABLE_TESTING': false, 'ENABLE_PROGRAMS': false})
+    crypto_dep = cmake.subproject('mbedtls', options: opts).dependency('mbedcrypto')
 else
-    crypto_dep = dependency('libgcrypt', required: false)
-    if crypto_dep.found()
-        add_project_arguments('-DUSE_GCRYPT', language: ['c', 'cpp'])
-    else
-        crypto_dep = dependency('mbedtls', fallback: ['mbedtls', 'mbedtls_dep'])
-    endif
-    exe_deps += crypto_dep
+    add_project_arguments('-DUSE_GCRYPT', language: ['c', 'cpp'])
 endif
+exe_deps += crypto_dep
 
 if host_machine.system() == 'windows'
     exe_deps += declare_dependency(include_directories: include_directories('C:/Program Files (x86)/WinFsp/inc/fuse'))
@@ -41,9 +41,14 @@ else
     add_project_arguments('-DFUSE_USE_VERSION=26', language: ['c', 'cpp'])
 endif
 
-cli11 = subproject('CLI11')
-exe_deps += cli11.get_variable('CLI11_dep')
-exe_deps += dependency('re2', fallback: ['re2', 're2_dep'])
+cli11_proj = subproject('CLI11')
+exe_deps += cli11_proj.get_variable('CLI11_dep')
+
+re2_dep = dependency('re2', required: false)
+if not re2_dep.found()
+    re2_dep = cmake.subproject('re2').dependency('re2')
+endif
+exe_deps += re2_dep
 
 if host_machine.system() == 'windows'
     exe_deps += meson.get_compiler('cpp').find_library('Shlwapi', required: true)

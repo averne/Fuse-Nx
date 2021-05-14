@@ -45,15 +45,14 @@ fs::path get_keyset_path(crypt::KeySetType type) {
     path /= ".switch";
 
     switch (type) {
-        // TODO(C++20):
-        // using enum crypt::KeySetType;
-        case crypt::KeySetType::Prod:
+        using enum crypt::KeySetType;
+        case Prod:
             path /= "prod.keys";
             break;
-        case crypt::KeySetType::Dev:
+        case Dev:
             path /= "dev.keys";
             break;
-        case crypt::KeySetType::Title:
+        case Title:
             path /= "title.keys";
             break;
     }
@@ -95,13 +94,12 @@ std::unique_ptr<crypt::TitlekeySet> parse_title(const fs::path &path) {
 
 void init_keyset(crypt::KeySetType type, const fs::path &path) {
     switch (type) {
-        // TODO(C++20):
-        // using enum crypt::KeySetType;
-        case crypt::KeySetType::Prod:
-        case crypt::KeySetType::Dev:
+        using enum crypt::KeySetType;
+        case Prod:
+        case Dev:
             crypt::KeySet::set(parse_console(path.empty() ? get_keyset_path(type) : path));
             return;
-        case crypt::KeySetType::Title:
+        case Title:
             crypt::TitlekeySet::set(parse_title(path.empty() ? get_keyset_path(type) : path));
             return;
     }

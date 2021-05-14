@@ -79,7 +79,7 @@ int FuseContext::run(const Options &options) {
     fuse_opt_add_arg(&args, "-osync_read");                 // Synchronous reads
 
     s_fs = this->filesys.get();
-	return fuse_main(args.argc, args.argv, &this->ops, nullptr);
+    return fuse_main(args.argc, args.argv, &this->ops, nullptr);
 }
 
 int FuseContext::wrap_getattr(const char *path, struct stat *stbuf) {
@@ -90,13 +90,13 @@ int FuseContext::wrap_getattr(const char *path, struct stat *stbuf) {
     stbuf->st_uid = ctx->uid;
     stbuf->st_gid = ctx->gid;
 
-	if (fs.get_folder(path)) {
-		stbuf->st_mode = S_IFDIR | 0555;
+    if (fs.get_folder(path)) {
+        stbuf->st_mode = S_IFDIR | 0555;
     } else if (auto opt = fs.get_file(path); opt) {
         stbuf->st_size = (*opt)->get_size();
         stbuf->st_mode = S_IFREG | 0444;
     } else {
-		return -ENOENT;
+        return -ENOENT;
     }
 
     return 0;

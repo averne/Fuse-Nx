@@ -28,7 +28,6 @@ namespace fnx::hac {
 
 Nca::Section::Section(const FsEntry &entry, const FsHeader &header, const crypt::AesKey &key, std::unique_ptr<io::FileBase> &&base):
         offset(entry.start_offset()), size(entry.end_offset() - entry.start_offset()) {
-
     this->type = ((header.fs_type == FsType::Pfs) && (header.hash_type == HashType::HierarchicalSha256)) ?
         Type::Pfs : Type::RomFs;
     auto nonce = __builtin_bswap64(header.nonce);
@@ -49,23 +48,23 @@ Nca::Section::Section(const FsEntry &entry, const FsHeader &header, const crypt:
         file = std::make_unique<io::OffsetFile>(std::move(base), size, offset);
 
     if (this->type == Type::Pfs)
-        new (&this->container) Pfs(std::move(file));
+        std::construct_at(reinterpret_cast<Pfs *>  (&this->container), std::move(file));
     else
-        new (&this->container) RomFs(std::move(file));
+        std::construct_at(reinterpret_cast<RomFs *>(&this->container), std::move(file));
 }
 
 Nca::Section::Section(Section &&other) noexcept: type(other.type), offset(other.offset), size(other.size) {
     if (this->type == Type::Pfs)
-        new (&this->container) Pfs(std::move(other.get_pfs()));
+        std::construct_at(reinterpret_cast<Pfs *>  (&this->container), std::move(other.get_pfs()));
     else
-        new (&this->container) RomFs(std::move(other.get_romfs()));
+        std::construct_at(reinterpret_cast<RomFs *>(&this->container), std::move(other.get_romfs()));
 }
 
 Nca::Section::~Section() {
     if (this->type == Type::Pfs)
-        reinterpret_cast<Pfs   *>(&this->container)->~Pfs();
+        std::destroy_at(reinterpret_cast<Pfs *>  (&this->container));
     else
-        reinterpret_cast<RomFs *>(&this->container)->~RomFs();
+        std::destroy_at(reinterpret_cast<RomFs *>(&this->container));
 }
 
 void Nca::decrypt_header(Header &header) {

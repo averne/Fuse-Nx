@@ -113,8 +113,11 @@ RomFs::DirEntry *RomFs::find_dir(const std::string_view &path) {
 
         // Find meta
         auto *dir_meta = reinterpret_cast<const DirEntryMeta *>(&this->dir_meta_tbl[bucket]);
-        while ((cur_name != std::string_view(dir_meta->name, dir_meta->name_len)) && (dir_meta->next != RomFs::invalid_meta))
+        while ((cur_name != std::string_view(dir_meta->name, dir_meta->name_len)) || (offset != dir_meta->parent_off)) {
+            if (dir_meta->next == RomFs::invalid_meta)
+                break;
             dir_meta = reinterpret_cast<const DirEntryMeta *>(&this->dir_meta_tbl[dir_meta->next]);
+        }
 
         // Find entry
         auto it = std::find_if(entry->children.begin(), entry->children.end(), [dir_meta](auto *d) { return d->meta == dir_meta; });

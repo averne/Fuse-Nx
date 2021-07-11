@@ -11,7 +11,7 @@ project('Fuse-NX', ['c', 'cpp'],
         'auto_features=enabled',
     ],
     license: 'GPLv3+',
-    version: '1.0.0',
+    version: '1.1.0',
 )
 
 cmake = import('cmake')

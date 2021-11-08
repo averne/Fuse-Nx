@@ -1,4 +1,4 @@
 [wrap-git]
 url = https://github.com/CLIUtils/CLI11.git
-revision = master
+revision = main
 depth = 1

@@ -25,6 +25,7 @@
 #ifdef USE_GCRYPT
 #   include <gcrypt.h>
 #else
+#   define MBEDTLS_ALLOW_PRIVATE_ACCESS
 #   include <mbedtls/cipher.h>
 #endif
 

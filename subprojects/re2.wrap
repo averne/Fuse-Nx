@@ -1,4 +1,4 @@
 [wrap-git]
 url = https://github.com/google/re2.git
-revision = master
+revision = main
 depth = 1

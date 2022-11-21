@@ -5,7 +5,7 @@ from setuptools import setup, Extension
 
 setup(
     name = "fnx",
-    version = "1.0.0",
+    version = "1.1.1",
     packages = ["fnx"],
     package_dir = {"": "bindings"},
     ext_modules = [

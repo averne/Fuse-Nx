@@ -77,14 +77,24 @@ void Nca::decrypt_header(Header &header) {
         ctx.set_sector(0);
     }
 
-    ctx.decrypt(header);
+    // Decrypt up to the fs headers
+    ctx.decrypt(&header, 0x400);
+
+    if (header.magic == Nca::nca3_magic) {
+        ctx.decrypt(header.fs_headers.data(), sizeof(Header) - 0x400);
+    } else if (header.magic == Nca::nca2_magic) {
+        for (auto &fs_hdr: header.fs_headers) {
+            ctx.set_sector(0);
+            ctx.decrypt(fs_hdr);
+        }
+    }
 }
 
 bool Nca::match(const void *data, std::size_t size) {
     Header header;
     std::copy_n(reinterpret_cast<const std::uint8_t *>(data), size, reinterpret_cast<std::uint8_t *>(&header));
     Nca::decrypt_header(header);
-    return header.magic == Nca::magic;
+    return (header.magic == Nca::nca2_magic) || (header.magic == Nca::nca3_magic);
 }
 
 Nca::Nca(std::unique_ptr<io::FileBase> &&base): FormatBase(std::move(base)) {

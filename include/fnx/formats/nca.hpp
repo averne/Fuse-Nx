@@ -32,7 +32,8 @@ namespace fnx::hac {
 
 class Nca final: public FormatBase {
     public:
-        constexpr static auto magic = utils::FourCC('N', 'C', 'A', '3');
+        constexpr static auto nca2_magic = utils::FourCC('N', 'C', 'A', '2');
+        constexpr static auto nca3_magic = utils::FourCC('N', 'C', 'A', '3');
 
         enum class DistributionType: std::uint8_t {
             System,
@@ -58,7 +59,8 @@ class Nca final: public FormatBase {
         bool parse();
 
         bool is_valid() const {
-            return this->header.magic == Nca::magic;
+            return (this->header.magic == Nca::nca2_magic) ||
+                 (this->header.magic == Nca::nca3_magic);
         }
 
         DistributionType get_distribution_type() const {

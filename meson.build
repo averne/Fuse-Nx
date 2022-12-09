@@ -26,7 +26,7 @@ exe_deps = []
 crypto_dep = dependency('libgcrypt', required: false)
 if not crypto_dep.found() or get_option('cryptobackend') == 'mbedtls'
     opts = cmake.subproject_options()
-    opts.add_cmake_defines({'ENABLE_TESTING': false, 'ENABLE_PROGRAMS': false})
+    opts.add_cmake_defines({'ENABLE_TESTING': false, 'ENABLE_PROGRAMS': false, 'GEN_FILES': true})
     crypto_dep = cmake.subproject('mbedtls', options: opts).dependency('mbedcrypto')
 else
     add_project_arguments('-DUSE_GCRYPT', language: ['c', 'cpp'])

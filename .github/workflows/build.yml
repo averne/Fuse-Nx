@@ -42,13 +42,13 @@ jobs:
         echo CXX=g++-11 >> $GITHUB_ENV
       if: matrix.os == 'ubuntu-latest'
 
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v3
 
-    - uses: actions/setup-python@v1
+    - uses: actions/setup-python@v4
       with:
         python-version: '3.x'
 
-    - run: pip install meson ninja
+    - run: pip install meson ninja jsonschema jinja2
 
     - run: meson setup build
 
@@ -96,11 +96,11 @@ jobs:
         echo CXX=g++-10 >> $GITHUB_ENV
       if: matrix.os == 'ubuntu-latest'
 
-    - uses: actions/setup-python@v1
+    - uses: actions/setup-python@v4
       if: matrix.os == 'ubuntu-latest'
       with:
         python-version: '3.x'
 
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v3
 
     - run: python setup.py build

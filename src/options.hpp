@@ -51,6 +51,18 @@ struct KeyOptions {
     }
 };
 
+struct GeneralOptions {
+    bool search_romfs = false;
+
+    GeneralOptions(CLI::App &app) {
+        app.add_flag("--search-romfs", this->search_romfs, "Search RomFs for containers");
+    }
+
+    void init() {
+        RomFsContainer::set_search_containers(this->search_romfs);
+    }
+};
+
 struct FuseOptions {
     CLI::App             *fuse_cmd;
     std::filesystem::path container;
@@ -161,13 +173,16 @@ class ProgramOptions {
         template <typename ...Args>
         ProgramOptions(Args &&...args):
                 app(std::forward<Args>(args)...),
-                keyopts(this->app), fuseopts(this->app), findopts(this->app), dumpopts(this->app), listopts(this->app) {
+                keyopts(this->app),  genopts(this->app),
+                fuseopts(this->app), findopts(this->app), dumpopts(this->app), listopts(this->app) {
             this->app.set_help_all_flag("--help-all", "Expand all help");
             this->app.require_subcommand(1);
         }
 
         int run() {
             this->keyopts.init();
+            this->genopts.init();
+
             if (this->fuseopts.fuse_cmd->parsed())
                 return this->fuseopts.run();
             else if (this->findopts.find_cmd->parsed())
@@ -180,12 +195,13 @@ class ProgramOptions {
         }
 
     public:
-        CLI::App    app;
-        KeyOptions  keyopts;
-        FuseOptions fuseopts;
-        FindOptions findopts;
-        DumpOptions dumpopts;
-        ListOptions listopts;
+        CLI::App       app;
+        KeyOptions     keyopts;
+        GeneralOptions genopts;
+        FuseOptions    fuseopts;
+        FindOptions    findopts;
+        DumpOptions    dumpopts;
+        ListOptions    listopts;
 };
 
 } // namespace fnx

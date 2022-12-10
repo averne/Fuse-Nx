@@ -94,7 +94,13 @@ class RomFsContainer final: public Container<hac::RomFs> {
             }
         }
 
+        static void set_search_containers(bool search) {
+            RomFsContainer::search_containers = search;
+        }
+
     private:
+        static inline bool search_containers = false;
+
         bool parsed = false;
         std::string path;
 };

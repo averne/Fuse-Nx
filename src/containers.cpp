@@ -46,7 +46,7 @@ std::vector<FileEntry> RomFsContainer::read_files() {
 
     this->parse_dir(dir);
     for (auto *file: dir->files)
-        out.emplace_back(file->name, this->container->open(*file), false);
+        out.emplace_back(file->name, this->container->open(*file), RomFsContainer::search_containers);
     return out;
 }
 

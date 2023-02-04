@@ -1,4 +1,4 @@
 [wrap-git]
 url = https://github.com/ARMmbed/mbedtls.git
-revision = development
+revision = v3.3.0
 depth = 1

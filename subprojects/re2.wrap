@@ -1,4 +1,4 @@
 [wrap-git]
 url = https://github.com/google/re2.git
-revision = main
+revision = 2023-02-01
 depth = 1

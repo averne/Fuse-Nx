@@ -22,6 +22,22 @@ namespace fnx {
 using FileEntry = ContainerBase::FileEntry;
 using DirEntry  = ContainerBase::DirEntry;
 
+namespace {
+
+using namespace std::string_view_literals;
+
+constexpr std::array extension_whitelist = {
+    "nca", "nsp", "pfs", "romfs", "hfs", "xci",
+};
+
+constexpr bool should_try_container(std::string_view name) {
+    auto ext = name.substr(name.rfind('.') + 1);
+    return std::find(extension_whitelist.begin(), extension_whitelist.end(), ext) !=
+        extension_whitelist.end();
+}
+
+} // namespace
+
 std::vector<FileEntry> PfsContainer::read_files() {
     std::vector<FileEntry> out;
     out.reserve(this->container->get_num_entries());
@@ -46,7 +62,8 @@ std::vector<FileEntry> RomFsContainer::read_files() {
 
     this->parse_dir(dir);
     for (auto *file: dir->files)
-        out.emplace_back(file->name, this->container->open(*file), RomFsContainer::search_containers);
+        out.emplace_back(file->name, this->container->open(*file),
+            RomFsContainer::search_containers || should_try_container(file->name));
     return out;
 }
 

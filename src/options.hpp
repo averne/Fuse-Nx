@@ -30,7 +30,7 @@
 namespace fnx {
 
 struct KeyOptions {
-    bool                  keyset_dev;
+    bool                  keyset_dev = false;
     std::filesystem::path keyset_path;
     std::string           titlekey;
     CLI::Option          *keyset_path_option;

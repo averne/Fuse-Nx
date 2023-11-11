@@ -38,8 +38,8 @@ using AesKey    = std::array<std::uint8_t, 0x10>;
 using AesXtsKey = std::array<std::uint8_t, 0x20>;
 
 struct KeySet {
-    std::array<AesKey, 0x10> master_keys;
-    std::array<AesKey, 0x10> titlekeks;
+    std::array<AesKey, 0x20> master_keys;
+    std::array<AesKey, 0x20> titlekeks;
 
     AesXtsKey header_key;
 

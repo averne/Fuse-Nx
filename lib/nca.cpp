@@ -128,7 +128,7 @@ void Nca::decrypt_keyarea() {
 bool Nca::parse() {
     this->crypto_type = (this->header.crypto_type > this->header.crypto_gen) ?
         this->header.crypto_type : this->header.crypto_gen;
-    this->crypto_type = std::clamp(this->crypto_type - 1, 0, 0x10);
+    this->crypto_type = std::clamp(this->crypto_type - 1, 0, 0x1f);
 
     if (utils::is_nonzero(this->header.right_id)) {
         this->has_rights_id = true;

@@ -6,6 +6,7 @@
             "type": "shell",
             "command": "meson",
             "args": [
+                "setup",
                 "build",
                 "--buildtype",
                 "debug",
@@ -20,7 +21,10 @@
         {
             "label": "all",
             "type": "shell",
-            "command": "meson compile",
+            "command": "meson",
+            "args": [
+                "compile",
+            ],
             "options": {
                 "cwd": "build",
                 "env": {

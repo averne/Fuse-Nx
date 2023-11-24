@@ -27,7 +27,7 @@ namespace {
 using namespace std::string_view_literals;
 
 constexpr std::array extension_whitelist = {
-    "nca", "nsp", "pfs", "romfs", "hfs", "xci",
+    "nca"sv, "nsp"sv, "pfs"sv, "romfs"sv, "hfs"sv, "xci"sv,
 };
 
 constexpr bool should_try_container(std::string_view name) {

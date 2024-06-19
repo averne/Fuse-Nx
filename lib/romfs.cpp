@@ -67,24 +67,35 @@ bool RomFs::parse_dir(DirEntry *entry, bool recursive) {
         meta = reinterpret_cast<DirEntryMeta *>(entry->meta);
     }
 
-    auto *dir_meta = reinterpret_cast<DirEntryMeta *>(&this->dir_meta_tbl[meta->child_off]);
-    while (static_cast<void *>(dir_meta) < static_cast<void *>(this->dir_meta_tbl.end().base())) {
-        auto &dir = this->dir_entries.emplace_back(std::make_unique<DirEntry>(entry, static_cast<void *>(dir_meta),
-            std::string_view(dir_meta->name, dir_meta->name_len)));
-        entry->children.push_back(dir.get());
+    if (meta->child_off != -1u) {
+        auto *dir_meta = reinterpret_cast<DirEntryMeta *>(&this->dir_meta_tbl[meta->child_off]);
+        while (static_cast<void *>(dir_meta) < static_cast<void *>(this->dir_meta_tbl.end().base())) {
+            auto &dir = this->dir_entries.emplace_back(std::make_unique<DirEntry>(entry, static_cast<void *>(dir_meta),
+                std::string_view(dir_meta->name, dir_meta->name_len)));
+            entry->children.push_back(dir.get());
 
-        if (recursive)
-            this->parse_dir(dir.get(), recursive);
+            if (recursive)
+                this->parse_dir(dir.get(), recursive);
 
-        dir_meta = reinterpret_cast<DirEntryMeta *>(&this->dir_meta_tbl[dir_meta->sibling_off]);
+            if (dir_meta->sibling_off == -1u)
+                break;
+
+            dir_meta = reinterpret_cast<DirEntryMeta *>(&this->dir_meta_tbl[dir_meta->sibling_off]);
+        }
     }
 
-    auto *file_meta = reinterpret_cast<FileEntryMeta *>(&this->file_meta_tbl[meta->file_off]);
-    while (static_cast<void *>(file_meta) < static_cast<void *>(this->file_meta_tbl.end().base())) {
-        auto &file = this->file_entries.emplace_back(std::make_unique<FileEntry>(entry, static_cast<void *>(file_meta),
-            std::string_view(file_meta->name, file_meta->name_len), file_meta->data_off, file_meta->data_sz));
-        entry->files.push_back(file.get());
-        file_meta = reinterpret_cast<FileEntryMeta *>(&this->file_meta_tbl[file_meta->sibling_off]);
+    if (meta->file_off != -1u) {
+        auto *file_meta = reinterpret_cast<FileEntryMeta *>(&this->file_meta_tbl[meta->file_off]);
+        while (static_cast<void *>(file_meta) < static_cast<void *>(this->file_meta_tbl.end().base())) {
+            auto &file = this->file_entries.emplace_back(std::make_unique<FileEntry>(entry, static_cast<void *>(file_meta),
+                std::string_view(file_meta->name, file_meta->name_len), file_meta->data_off, file_meta->data_sz));
+            entry->files.push_back(file.get());
+
+            if (file_meta->sibling_off == -1u)
+                break;
+
+            file_meta = reinterpret_cast<FileEntryMeta *>(&this->file_meta_tbl[file_meta->sibling_off]);
+        }
     }
 
     return true;

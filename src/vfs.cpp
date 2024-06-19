@@ -21,10 +21,35 @@ namespace fnx {
 
 namespace fs = std::filesystem;
 
+namespace {
+
+void try_load_ticket_key(ContainerBase *container) {
+    for (auto &&[name, file, _]: container->read_files()) {
+        constexpr std::size_t tik_size = 0x2c0;
+        if (name.ends_with(".tik") && file->size() >= tik_size) {
+            auto dat = file->read(tik_size);
+
+            std::printf("Detected ticket %s, loading title key\n", name.c_str());
+
+            RightsId rights_id;
+            std::copy_n(dat.data() + 0x2a0, sizeof(rights_id), rights_id.begin());
+
+            crypt::AesKey key;
+            std::copy_n(dat.data() + 0x180, sizeof(key), key.begin());
+
+            crypt::TitlekeySet::get()->set_key(rights_id, key);
+        }
+    }
+}
+
+} // namespace
+
+
 std::optional<std::shared_ptr<Folder>> File::make_container() const {
     std::unique_ptr<ContainerBase> container;
 
-    switch (hac::match(this->base->read_at(0, 0x400))) {
+    auto fmt = hac::match(this->base->read_at(0, 0x400));
+    switch (fmt) {
         case hac::Format::Pfs:
             container = std::make_unique<PfsContainer>(this->base->clone());
             break;
@@ -47,6 +72,9 @@ std::optional<std::shared_ptr<Folder>> File::make_container() const {
 
     if (!container->parse())
         return std::nullopt;
+
+    if (fmt == hac::Format::Pfs)
+        try_load_ticket_key(container.get());
 
     auto &name = this->get_name();
     return std::make_shared<Folder>(name.substr(0, name.find_last_of('.')), std::move(container));

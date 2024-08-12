@@ -105,7 +105,13 @@
         {
             "label": "bindings",
             "type": "shell",
-            "command": "python setup.py build install",
+            "command": "${command:python.interpreterPath}",
+            "args": [
+                "setup.py",
+                "build",
+                "--debug",
+                "install",
+            ],
             "presentation": {
                 "reveal": "always",
                 "panel": "shared",
@@ -119,7 +125,11 @@
         {
             "label": "bindings-clean",
             "type": "shell",
-            "command": "python setup.py clean",
+            "command": "${command:python.interpreterPath}",
+            "args": [
+                "setup.py",
+                "clean",
+            ],
             "presentation": {
                 "reveal": "always",
                 "panel": "shared",

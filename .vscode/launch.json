@@ -67,7 +67,7 @@
         },
         {
             "name": "Python bindings",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${workspaceRoot}/scripts/list_nsp.py",
             "args": [

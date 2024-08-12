@@ -27,6 +27,14 @@ class File(io.RawIOBase):
     def __init__(self, *args):
         if isinstance(args[0], fnxbinds.FileBase):
             self.base = args[0]
+        elif isinstance(args[0], io.IOBase):
+            f = args[0]
+            pos = f.tell()
+            f.seek(0, io.SEEK_END)
+            size = f.tell()
+            f.seek(pos, io.SEEK_SET)
+
+            self.base = fnxbinds.FileBase(f, size)
         else:
             self.base = fnxbinds.FileBase(*args)
 
@@ -272,16 +280,16 @@ class Nca:
     """ Class representing an Nca """
 
     class DistributionType(enum.IntEnum):
-        SYSTEM   = 0
-        GAMECARD = 1
+        System   = 0
+        Gamecard = 1
 
     class ContentType(enum.IntEnum):
-        PROGRAM    = 0
-        META       = 1
-        CONTROL    = 2
-        MANUAL     = 3
-        DATA       = 4
-        PUBLICDATA = 5
+        Program    = 0
+        Meta       = 1
+        Control    = 2
+        Manual     = 3
+        Data       = 4
+        PublicData = 5
 
     def __init__(self, file_or_path: Union[File, str], parse: bool=False):
         """ Creates the Nca, arguments: path to the file, or File object """
@@ -336,7 +344,7 @@ class Nca:
         return self.base.get_title_id()
 
     @property
-    def sdk_ver(self) -> (int, int, int, int):
+    def sdk_ver(self) -> tuple[int, int, int, int]:
         """ Returns the sdk version from the header of the Nca """
         return self.base.get_sdk_ver()
 
@@ -346,7 +354,7 @@ class Nca:
         return self.base.get_rights_id()
 
     @property
-    def get_num_section(self):
+    def num_sections(self):
         """ Returns the number of sections contained in the Nca """
         if not self.parsed:
             self.parse()
@@ -364,12 +372,12 @@ class Xci:
     """ Class representing an Xci """
 
     class CartType(enum.IntEnum):
-        GB1  = 0xfA
-        GB2  = 0xf8
-        GB4  = 0xf0
-        GB8  = 0xe0
-        GB16 = 0xe1
-        GB32 = 0xe2
+        Gb1  = 0xfA
+        Gb2  = 0xf8
+        Gb4  = 0xf0
+        Gb8  = 0xe0
+        Gb16 = 0xe1
+        Gb32 = 0xe2
 
     def __init__(self, file_or_path: Union[File, str], parse: bool=False):
         """ Creates the Xci, arguments: path to the file, or File object """
@@ -405,7 +413,7 @@ class Xci:
         return Xci.CartType(self.base.get_cart_type())
 
     @property
-    def get_num_partitions(self):
+    def num_partitions(self):
         """ Returns the number of partitions contained in the Xci """
         if not self.parsed:
             self.parse()
@@ -428,9 +436,9 @@ class Xci:
 
 class Keys:
     class Type(enum.IntEnum):
-        PROD  = enum.auto()
-        DEV   = enum.auto()
-        TITLE = enum.auto()
+        Prod  = enum.auto()
+        Dev   = enum.auto()
+        Title = enum.auto()
 
     _key_reg = re.compile(r"""^\s*([a-zA-Z0-9_]+)\s* # name
                             =
@@ -439,18 +447,18 @@ class Keys:
     @staticmethod
     def get_default_path(type: Type) -> str:
         """ Gets the default path for a key file type (~/.switch/%s.keys on *nix) """
-        if type == Keys.Type.PROD:
+        if type == Keys.Type.Prod:
             return os.path.join(os.path.expanduser("~"), ".switch", "prod.keys")
-        elif type == Keys.Type.DEV:
+        elif type == Keys.Type.Dev:
             return os.path.join(os.path.expanduser("~"), ".switch", "dev.keys")
-        elif type == Keys.Type.TITLE:
+        elif type == Keys.Type.Title:
             return os.path.join(os.path.expanduser("~"), ".switch", "title.keys")
 
     @staticmethod
-    def init_keys(path_or_type: Union[str, Type]=Type.PROD) -> None:
+    def init_keys(path_or_type: Union[str, Type]=Type.Prod) -> None:
         """ Initializes the console key list, arguments: path or keyset type """
         if isinstance(path_or_type, Keys.Type):
-            if path_or_type == Keys.Type.TITLE:
+            if path_or_type == Keys.Type.Title:
                 raise ValueError("Trying to init keyset with titlekeys")
             path = Keys.get_default_path(path_or_type)
         else:
@@ -470,7 +478,7 @@ class Keys:
     def init_titlekeys(path: str=None) -> None:
         """ Initializes the title key list, arguments: path or keyset type """
         if path is None:
-            path = Keys.get_default_path(Keys.Type.TITLE)
+            path = Keys.get_default_path(Keys.Type.Title)
 
         with open(path, "r") as fp:
             it = (re.search(Keys._key_reg, l) for l in fp)

@@ -31,6 +31,8 @@
 
 #include <fnx.hpp>
 
+namespace {
+
 template <typename ...Args>
 inline void Py_VarDECREF(Args &&...args) {
     auto decref = [](auto *obj) { Py_DECREF(obj); };
@@ -39,7 +41,7 @@ inline void Py_VarDECREF(Args &&...args) {
 
 template <typename ...Args>
 inline void Py_VarXDECREF(Args &&...args) {
-    auto xdecref = [](auto *obj) { Py_DECREF(obj); };
+    auto xdecref = [](auto *obj) { Py_XDECREF(obj); };
     (xdecref(args), ...);
 }
 
@@ -55,26 +57,93 @@ inline void Py_VarXINCREF(Args &&...args) {
     (xincref(args), ...);
 }
 
+class IoFile: public fnx::io::FileBase {
+    public:
+        IoFile(PyObject *object, std::size_t size): object(object) {
+            Py_VarINCREF(this->object);
+            this->fsize = size;
+        }
+
+        IoFile(const IoFile &other): IoFile(other.object, other.fsize) { }
+
+        virtual ~IoFile() override {
+            Py_VarDECREF(this->object);
+        }
+
+        virtual std::unique_ptr<FileBase> clone() const override {
+            return std::make_unique<IoFile>(*this);
+        }
+
+        virtual std::size_t read(void *dest, std::uint64_t size) override {
+            auto *obj = PyObject_New(PyByteArrayObject, &PyByteArray_Type);
+            FNX_SCOPEGUARD([&obj] { obj->ob_bytes = nullptr; Py_VarXDECREF(obj); });
+            if (!obj)
+                return 0;
+
+            obj->ob_bytes   = static_cast<char *>(dest);
+            obj->ob_start   = obj->ob_bytes;
+            obj->ob_alloc   = size;
+            obj->ob_exports = 0;
+            Py_SET_SIZE(obj, size);
+
+            {
+                auto *res = PyObject_CallMethod(this->object, "seek", "LI", this->pos, fnx::io::Whence::Set);
+                FNX_SCOPEGUARD([&res] { Py_VarXDECREF(res); });
+                if (!res)
+                    return 0;
+            }
+
+            {
+                auto *res = PyObject_CallMethod(this->object, "readinto", "O", reinterpret_cast<PyObject *>(obj));
+                FNX_SCOPEGUARD([&res] { Py_VarXDECREF(res); });
+                if (!res || res == Py_None)
+                    return 0;
+
+                return PyLong_AsSize_t(res);
+            }
+        }
+
+        virtual std::size_t write(const void *data, std::uint64_t size) override {
+            return 0;
+        }
+
+    private:
+        PyObject *object;
+};
+
+} // namespace
+
 struct PyFileBase {
     PyObject_HEAD
     std::unique_ptr<fnx::io::FileBase> ptr;
 };
 
 static int PyFileBase_init(PyFileBase *self, PyObject *args, PyObject *kwds) {
-    char *path = nullptr, *mode = nullptr;
-    if (!PyArg_ParseTuple(args, "ss", &path, &mode))
+    PyObject *obj1, *obj2;
+    if (!PyArg_ParseTuple(args, "OO", &obj1, &obj2))
         return 1;
 
-    auto obj = std::make_unique<fnx::io::File>(path, mode);
+    if (PyUnicode_Check(obj1) && PyUnicode_Check(obj2)) {
+        auto *path = PyUnicode_AsUTF8(obj1),
+            *mode = PyUnicode_AsUTF8(obj2);
 
-    if (!obj->good()) {
-        PyErr_Format(PyExc_RuntimeError, "%s stream is not good", path);
+        auto f = std::make_unique<fnx::io::File>(path, mode);
+
+        if (!f->good()) {
+            PyErr_Format(PyExc_RuntimeError, "%s stream is not good", path);
+            return 1;
+        }
+
+        f->update_size();
+
+        self->ptr = std::move(f);
+    } else if (PyLong_Check(obj2)) {
+        auto size = PyLong_AsSize_t(obj2);
+        self->ptr = std::make_unique<IoFile>(obj1, size);
+    } else {
         return 1;
     }
 
-    obj->update_size();
-
-    self->ptr = std::move(obj);
     return 0;
 }
 
@@ -93,7 +162,7 @@ static PyObject *PyFileBase_seek(PyFileBase *self, PyObject **args, Py_ssize_t n
 
     std::size_t where = 0;
     fnx::io::Whence whence = fnx::io::Whence::Set;
-    if (!_PyArg_ParseStack(args, nargs, "ii", &where, &whence))
+    if (!_PyArg_ParseStack(args, nargs, "kI", &where, &whence))
         return nullptr;
 
     self->ptr->seek(where, whence);

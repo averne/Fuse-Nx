@@ -280,7 +280,7 @@ class Nca:
     """ Class representing an Nca """
 
     class DistributionType(enum.IntEnum):
-        System   = 0
+        Download = 0
         Gamecard = 1
 
     class ContentType(enum.IntEnum):
@@ -372,7 +372,7 @@ class Xci:
     """ Class representing an Xci """
 
     class CartType(enum.IntEnum):
-        Gb1  = 0xfA
+        Gb1  = 0xfa
         Gb2  = 0xf8
         Gb4  = 0xf0
         Gb8  = 0xe0
@@ -464,11 +464,15 @@ class Keys:
         else:
             path = path_or_type
 
-        with open(path, "r") as fp:
-            it = (re.search(Keys._key_reg, l) for l in fp)
-            for match in it:
-                if match is not None:
-                    fnxbinds.set_key(match[1], match[2])
+        try:
+            fp = open(path, "r")
+        except FileNotFoundError:
+            return
+
+        it = (re.search(Keys._key_reg, l) for l in fp)
+        for match in it:
+            if match is not None:
+                fnxbinds.set_key(match[1], match[2])
 
     @staticmethod
     def set_key(name: str, key: str) -> None:
@@ -480,11 +484,15 @@ class Keys:
         if path is None:
             path = Keys.get_default_path(Keys.Type.Title)
 
-        with open(path, "r") as fp:
-            it = (re.search(Keys._key_reg, l) for l in fp)
-            for match in it:
-                if match is not None:
-                    fnxbinds.set_titlekey(match[1], match[2])
+        try:
+            fp = open(path, "r")
+        except FileNotFoundError:
+            return
+
+        it = (re.search(Keys._key_reg, l) for l in fp)
+        for match in it:
+            if match is not None:
+                fnxbinds.set_titlekey(match[1], match[2])
 
     @staticmethod
     def set_titlekey(rights_id: str, key: str) -> None:

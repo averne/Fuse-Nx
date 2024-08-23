@@ -4,7 +4,7 @@ import sys, shutil
 import fnx
 
 def find_sdk_in_nca(nca):
-    if nca.content_type != fnx.Nca.ContentType.PROGRAM:
+    if nca.content_type != fnx.Nca.ContentType.Program:
         return
 
     for sec in nca.sections:

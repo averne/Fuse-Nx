@@ -11,7 +11,7 @@ def main(argc, argv):
         return 1
 
     xci = fnx.Xci(argv[1])
-    print(f"Xci: cart type: {xci.cart_type:#x}")
+    print(f"Xci: cart type: {fnx.Xci.CartType(xci.cart_type).name}")
 
     # Open the secure partition, sort entries by decreasing size (the control nca will usually be the second)
     secure_part = xci.get_partition("secure")
@@ -19,7 +19,7 @@ def main(argc, argv):
 
     for entry in entries:
         nca = fnx.Nca(secure_part.open(entry))
-        if nca.content_type != fnx.Nca.ContentType.CONTROL:
+        if nca.content_type != fnx.Nca.ContentType.Control:
             continue
 
         for sec in nca.sections:

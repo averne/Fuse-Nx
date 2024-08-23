@@ -8,7 +8,7 @@ from PIL import Image
 
 def main(argc, argv):
     if (argc != 2):
-        print(f"Usage: {argv[0]} xci")
+        print(f"Usage: {argv[0]} nsp")
         return 1
 
     nsp = fnx.Pfs(argv[1])
@@ -21,8 +21,9 @@ def main(argc, argv):
         if not nca.valid:
             continue
 
-        print(f"  Distribution type: {nca.distribution_type}, content type: {nca.content_type}, \
-title id: {nca.title_id:016x}, sdk version: {'.'.join(map(str, nca.sdk_ver))}, rights id: {hexlify(nca.rights_id).decode()}")
+        print(f"  Distribution type: {fnx.Nca.DistributionType(nca.distribution_type).name}, \
+content type: {fnx.Nca.ContentType(nca.content_type).name}, title id: {nca.title_id:016x}, \
+sdk version: {'.'.join(map(str, nca.sdk_ver))}, rights id: {nca.rights_id.hex()}")
 
         for sec in nca.sections:
             if isinstance(sec, fnx.Pfs):

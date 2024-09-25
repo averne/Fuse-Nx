@@ -367,6 +367,13 @@ class Nca:
             self.parse()
         return self._sections
 
+    @property
+    def section_bounds(self):
+        """ Returns a list of section boundaries (offset/size) within the Nca """
+        if not self.parsed:
+            self.parse()
+        return self.base.get_section_bounds()
+
 
 class Xci:
     """ Class representing an Xci """

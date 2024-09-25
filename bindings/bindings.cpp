@@ -998,6 +998,26 @@ static PyObject *PyNca_get_sections(PyNca *self, [[maybe_unused]] PyObject *args
     return list;
 }
 
+static PyObject *PyNca_get_section_bounds(PyNca *self, [[maybe_unused]] PyObject *args) {
+    auto *list = PyList_New(0);
+    if (!list)
+        return nullptr;
+
+    for (auto &section: self->ptr->get_sections()) {
+        auto *tuple = PyTuple_New(2);
+        if (!tuple)
+            return nullptr;
+
+        PyTuple_SetItem(tuple, 0, PyLong_FromSize_t(section.get_offset()));
+        PyTuple_SetItem(tuple, 1, PyLong_FromSize_t(section.get_size()));
+
+        PyList_Append(list, tuple);
+        Py_VarDECREF(tuple);
+    }
+
+    return list;
+}
+
 static std::array PyNca_methods = {
     PyMethodDef{
         .ml_name  = "is_valid",
@@ -1052,6 +1072,12 @@ static std::array PyNca_methods = {
         .ml_meth  = reinterpret_cast<PyCFunction>(PyNca_get_sections),
         .ml_flags = METH_NOARGS,
         .ml_doc   = "Gets list of sections"
+    },
+    PyMethodDef{
+        .ml_name  = "get_section_bounds",
+        .ml_meth  = reinterpret_cast<PyCFunction>(PyNca_get_section_bounds),
+        .ml_flags = METH_NOARGS,
+        .ml_doc   = "Gets list of section boundaries (offset/size)"
     },
     PyMethodDef{ nullptr },
 };

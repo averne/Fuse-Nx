@@ -248,6 +248,10 @@ class Nca final: public FormatBase {
                     return this->type;
                 }
 
+                std::size_t get_offset() const {
+                    return this->offset;
+                }
+
                 std::size_t get_size() const {
                     return this->size;
                 }

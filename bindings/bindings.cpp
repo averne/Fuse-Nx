@@ -94,7 +94,7 @@ class IoFile: public fnx::io::FileBase {
             }
 
             {
-                auto *res = PyObject_CallMethod(this->object, "readinto", "O", reinterpret_cast<PyObject *>(obj));
+                auto *res = PyObject_CallMethod(this->object, "readinto", "O", _PyObject_CAST(obj));
                 FNX_SCOPEGUARD([&res] { Py_VarXDECREF(res); });
                 if (!res || res == Py_None)
                     return 0;
@@ -152,6 +152,16 @@ static void PyFileBase_dealloc(PyFileBase *self) {
     Py_TYPE(self)->tp_free(self);
 }
 
+static PyObject *PyFileBase_clone(PyFileBase *self, [[maybe_unused]] PyObject *args) {
+    auto *file = PyObject_New(PyFileBase, Py_TYPE(self));
+    if (!file)
+        return nullptr;
+
+    file->ptr.release();
+    file->ptr = self->ptr->clone();
+    return _PyObject_CAST(file);
+}
+
 static PyObject *PyFileBase_size(PyFileBase *self, [[maybe_unused]] PyObject *args) {
     return PyLong_FromUnsignedLong(self->ptr->size());
 }
@@ -202,33 +212,39 @@ static PyObject *PyFileBase_write(PyFileBase *self, PyObject **args, Py_ssize_t 
 static std::array PyFileBase_methods = {
     PyMethodDef{
         .ml_name  = "size",
-        .ml_meth  = reinterpret_cast<PyCFunction>(PyFileBase_size),
+        .ml_meth  = _PyCFunction_CAST(PyFileBase_size),
         .ml_flags = METH_NOARGS,
         .ml_doc   = "Returns size of the file"
     },
     PyMethodDef{
         .ml_name  = "seek",
-        .ml_meth  = reinterpret_cast<PyCFunction>(PyFileBase_seek),
+        .ml_meth  = _PyCFunction_CAST(PyFileBase_seek),
         .ml_flags = METH_FASTCALL,
         .ml_doc   = "Sets file position"
     },
     PyMethodDef{
         .ml_name  = "tell",
-        .ml_meth  = reinterpret_cast<PyCFunction>(PyFileBase_tell),
+        .ml_meth  = _PyCFunction_CAST(PyFileBase_tell),
         .ml_flags = METH_NOARGS,
         .ml_doc   = "Returns file position"
     },
     PyMethodDef{
         .ml_name  = "read",
-        .ml_meth  = reinterpret_cast<PyCFunction>(PyFileBase_read),
+        .ml_meth  = _PyCFunction_CAST(PyFileBase_read),
         .ml_flags = METH_FASTCALL,
         .ml_doc   = "Reads file data"
     },
     PyMethodDef{
         .ml_name  = "write",
-        .ml_meth  = reinterpret_cast<PyCFunction>(PyFileBase_write),
+        .ml_meth  = _PyCFunction_CAST(PyFileBase_write),
         .ml_flags = METH_FASTCALL,
         .ml_doc   = "Write data to file"
+    },
+    PyMethodDef{
+        .ml_name  = "clone",
+        .ml_meth  = _PyCFunction_CAST(PyFileBase_clone),
+        .ml_flags = METH_FASTCALL,
+        .ml_doc   = "Clone file"
     },
     PyMethodDef{ nullptr },
 };
@@ -342,7 +358,7 @@ static PyObject *PyPfs_get_entries(PyPfs *self, [[maybe_unused]] PyObject *args)
             continue;
         }
 
-        PyDict_SetItem(dict, obj->name, reinterpret_cast<PyObject *>(obj));
+        PyDict_SetItem(dict, obj->name, _PyObject_CAST(obj));
         Py_VarDECREF(obj);
     }
 
@@ -361,33 +377,33 @@ static PyObject *PyPfs_open(PyPfs *self, PyObject **args, Py_ssize_t nargs) {
     if (!file)
         return nullptr;
 
-    std::memset(reinterpret_cast<void *>(&file->ptr), 0, sizeof(file->ptr));
+    file->ptr.release();
     file->ptr = self->ptr->open({ entry->offset, entry->size });
-    return reinterpret_cast<PyObject *>(file);
+    return _PyObject_CAST(file);
 }
 
 static std::array PyPfs_methods = {
     PyMethodDef{
         .ml_name  = "is_valid",
-        .ml_meth  = reinterpret_cast<PyCFunction>(PyPfs_is_valid),
+        .ml_meth  = _PyCFunction_CAST(PyPfs_is_valid),
         .ml_flags = METH_NOARGS,
         .ml_doc   = "Checks file magic"
     },
     PyMethodDef{
         .ml_name  = "parse",
-        .ml_meth  = reinterpret_cast<PyCFunction>(PyPfs_parse),
+        .ml_meth  = _PyCFunction_CAST(PyPfs_parse),
         .ml_flags = METH_NOARGS,
         .ml_doc   = "Parses the Pfs"
     },
     PyMethodDef{
         .ml_name  = "get_entries",
-        .ml_meth  = reinterpret_cast<PyCFunction>(PyPfs_get_entries),
+        .ml_meth  = _PyCFunction_CAST(PyPfs_get_entries),
         .ml_flags = METH_NOARGS,
         .ml_doc   = "Gets dict of entries"
     },
     PyMethodDef{
         .ml_name  = "open",
-        .ml_meth  = reinterpret_cast<PyCFunction>(PyPfs_open),
+        .ml_meth  = _PyCFunction_CAST(PyPfs_open),
         .ml_flags = METH_FASTCALL,
         .ml_doc   = "Opens entry"
     },
@@ -503,7 +519,7 @@ static PyObject *PyHfs_get_entries(PyHfs *self, [[maybe_unused]] PyObject *args)
             continue;
         }
 
-        PyDict_SetItem(dict, obj->name, reinterpret_cast<PyObject *>(obj));
+        PyDict_SetItem(dict, obj->name, _PyObject_CAST(obj));
         Py_VarDECREF(obj);
     }
 
@@ -522,33 +538,33 @@ static PyObject *PyHfs_open(PyHfs *self, PyObject **args, Py_ssize_t nargs) {
     if (!file)
         return nullptr;
 
-    std::memset(reinterpret_cast<void *>(&file->ptr), 0, sizeof(file->ptr));
+    file->ptr.release();
     file->ptr = self->ptr->open({ entry->offset, entry->size });
-    return reinterpret_cast<PyObject *>(file);
+    return _PyObject_CAST(file);
 }
 
 static std::array PyHfs_methods = {
     PyMethodDef{
         .ml_name  = "is_valid",
-        .ml_meth  = reinterpret_cast<PyCFunction>(PyHfs_is_valid),
+        .ml_meth  = _PyCFunction_CAST(PyHfs_is_valid),
         .ml_flags = METH_NOARGS,
         .ml_doc   = "Checks file magic"
     },
     PyMethodDef{
         .ml_name  = "parse",
-        .ml_meth  = reinterpret_cast<PyCFunction>(PyHfs_parse),
+        .ml_meth  = _PyCFunction_CAST(PyHfs_parse),
         .ml_flags = METH_NOARGS,
         .ml_doc   = "Parses the Hfs"
     },
     PyMethodDef{
         .ml_name  = "get_entries",
-        .ml_meth  = reinterpret_cast<PyCFunction>(PyHfs_get_entries),
+        .ml_meth  = _PyCFunction_CAST(PyHfs_get_entries),
         .ml_flags = METH_NOARGS,
         .ml_doc   = "Gets dict of entries"
     },
     PyMethodDef{
         .ml_name  = "open",
-        .ml_meth  = reinterpret_cast<PyCFunction>(PyHfs_open),
+        .ml_meth  = _PyCFunction_CAST(PyHfs_open),
         .ml_flags = METH_FASTCALL,
         .ml_doc   = "Opens entry"
     },
@@ -748,7 +764,7 @@ static PyObject *PyRomfs_get_entries(PyRomfs *self, [[maybe_unused]] PyObject *a
                 return false;
 
             obj->name   = nullptr;
-            obj->parent = reinterpret_cast<PyObject *>(parent); Py_VarINCREF(parent);
+            obj->parent = _PyObject_CAST(parent); Py_VarINCREF(parent);
             obj->offset = entry->offset;
             obj->size   = entry->size;
 
@@ -763,10 +779,10 @@ static PyObject *PyRomfs_get_entries(PyRomfs *self, [[maybe_unused]] PyObject *a
             if (!path)
                 return Py_VarDECREF(obj), false;
 
-            if (PyList_Append(parent->files, reinterpret_cast<PyObject *>(obj)) < 0)
+            if (PyList_Append(parent->files, _PyObject_CAST(obj)) < 0)
                 return false;
 
-            if (PyDict_SetItem(file_dict, path, reinterpret_cast<PyObject *>(obj)) < 0)
+            if (PyDict_SetItem(file_dict, path, _PyObject_CAST(obj)) < 0)
                 return Py_VarDECREF(path, obj), false;
             Py_VarDECREF(path, obj);
         }
@@ -777,7 +793,7 @@ static PyObject *PyRomfs_get_entries(PyRomfs *self, [[maybe_unused]] PyObject *a
                 return false;
 
             obj->name   = obj->children = obj->files = nullptr;
-            obj->parent = reinterpret_cast<PyObject *>(parent); Py_VarINCREF(parent);
+            obj->parent = _PyObject_CAST(parent); Py_VarINCREF(parent);
 
             obj->name = PyUnicode_FromStringAndSize(entry->name.data(), entry->name.size());
             if (!obj->name)
@@ -798,10 +814,10 @@ static PyObject *PyRomfs_get_entries(PyRomfs *self, [[maybe_unused]] PyObject *a
             if (!path)
                 return Py_VarDECREF(obj), false;
 
-            if (PyList_Append(parent->children, reinterpret_cast<PyObject *>(obj)) < 0)
+            if (PyList_Append(parent->children, _PyObject_CAST(obj)) < 0)
                 return Py_VarDECREF(obj), false;
 
-            if (PyDict_SetItem(dir_dict, path, reinterpret_cast<PyObject *>(obj)) < 0)
+            if (PyDict_SetItem(dir_dict, path, _PyObject_CAST(obj)) < 0)
                 return Py_VarDECREF(path, obj), false;
             Py_VarDECREF(path, obj);
 
@@ -838,7 +854,7 @@ static PyObject *PyRomfs_get_entries(PyRomfs *self, [[maybe_unused]] PyObject *a
     if (!path)
         return Py_VarDECREF(root_obj, file_dict, dir_dict), nullptr;
 
-    PyDict_SetItem(dir_dict, path, reinterpret_cast<PyObject *>(root_obj));
+    PyDict_SetItem(dir_dict, path, _PyObject_CAST(root_obj));
     Py_VarDECREF(path, root_obj);
 
     auto &root_entry = self->ptr->get_root();
@@ -863,33 +879,33 @@ static PyObject *PyRomfs_open(PyRomfs *self, PyObject **args, Py_ssize_t nargs) 
     meta.offset = entry->offset;
     meta.size   = entry->size;
 
-    std::memset(reinterpret_cast<void *>(&file->ptr), 0, sizeof(file->ptr));
+    file->ptr.release();
     file->ptr = self->ptr->open(meta);
-    return reinterpret_cast<PyObject *>(file);
+    return _PyObject_CAST(file);
 }
 
 static std::array PyRomfs_methods = {
     PyMethodDef{
         .ml_name  = "is_valid",
-        .ml_meth  = reinterpret_cast<PyCFunction>(PyRomfs_is_valid),
+        .ml_meth  = _PyCFunction_CAST(PyRomfs_is_valid),
         .ml_flags = METH_NOARGS,
         .ml_doc   = "Checks file magic"
     },
     PyMethodDef{
         .ml_name  = "parse",
-        .ml_meth  = reinterpret_cast<PyCFunction>(PyRomfs_parse),
+        .ml_meth  = _PyCFunction_CAST(PyRomfs_parse),
         .ml_flags = METH_NOARGS,
         .ml_doc   = "Parses the RomFs"
     },
     PyMethodDef{
         .ml_name  = "get_entries",
-        .ml_meth  = reinterpret_cast<PyCFunction>(PyRomfs_get_entries),
+        .ml_meth  = _PyCFunction_CAST(PyRomfs_get_entries),
         .ml_flags = METH_NOARGS,
         .ml_doc   = "Gets dicts of file and dir entries"
     },
     PyMethodDef{
         .ml_name  = "open",
-        .ml_meth  = reinterpret_cast<PyCFunction>(PyRomfs_open),
+        .ml_meth  = _PyCFunction_CAST(PyRomfs_open),
         .ml_flags = METH_FASTCALL,
         .ml_doc   = "Opens entry"
     },
@@ -977,20 +993,20 @@ static PyObject *PyNca_get_sections(PyNca *self, [[maybe_unused]] PyObject *args
             if (!pfs)
                 continue;
 
-            std::memset(reinterpret_cast<void *>(&pfs->ptr), 0, sizeof(pfs->ptr));
+            pfs->ptr.release();
             pfs->ptr = std::make_unique<fnx::hac::Pfs>(section.get_pfs().clone_base());
 
-            PyList_Append(list, reinterpret_cast<PyObject *>(pfs));
+            PyList_Append(list, _PyObject_CAST(pfs));
             Py_VarDECREF(pfs);
         } else {
             auto *romfs = PyObject_New(PyRomfs, &PyRomfsType);
             if (!romfs)
                 continue;
 
-            std::memset(reinterpret_cast<void *>(&romfs->ptr), 0, sizeof(romfs->ptr));
+            romfs->ptr.release();
             romfs->ptr = std::make_unique<fnx::hac::RomFs>(section.get_romfs().clone_base());
 
-            PyList_Append(list, reinterpret_cast<PyObject *>(romfs));
+            PyList_Append(list, _PyObject_CAST(romfs));
             Py_VarDECREF(romfs);
         }
     }
@@ -1021,61 +1037,61 @@ static PyObject *PyNca_get_section_bounds(PyNca *self, [[maybe_unused]] PyObject
 static std::array PyNca_methods = {
     PyMethodDef{
         .ml_name  = "is_valid",
-        .ml_meth  = reinterpret_cast<PyCFunction>(PyNca_is_valid),
+        .ml_meth  = _PyCFunction_CAST(PyNca_is_valid),
         .ml_flags = METH_NOARGS,
         .ml_doc   = "Checks file magic"
     },
     PyMethodDef{
         .ml_name  = "parse",
-        .ml_meth  = reinterpret_cast<PyCFunction>(PyNca_parse),
+        .ml_meth  = _PyCFunction_CAST(PyNca_parse),
         .ml_flags = METH_NOARGS,
         .ml_doc   = "Parses the Nca"
     },
     PyMethodDef{
         .ml_name  = "get_distribution_type",
-        .ml_meth  = reinterpret_cast<PyCFunction>(PyNca_get_distribution_type),
+        .ml_meth  = _PyCFunction_CAST(PyNca_get_distribution_type),
         .ml_flags = METH_NOARGS,
         .ml_doc   = "Gets the distribution type of the Nca"
     },
     PyMethodDef{
         .ml_name  = "get_content_type",
-        .ml_meth  = reinterpret_cast<PyCFunction>(PyNca_get_content_type),
+        .ml_meth  = _PyCFunction_CAST(PyNca_get_content_type),
         .ml_flags = METH_NOARGS,
         .ml_doc   = "Gets the content type of the Nca"
     },
     PyMethodDef{
         .ml_name  = "get_size",
-        .ml_meth  = reinterpret_cast<PyCFunction>(PyNca_get_size),
+        .ml_meth  = _PyCFunction_CAST(PyNca_get_size),
         .ml_flags = METH_NOARGS,
         .ml_doc   = "Gets the size of the Nca as described in its header"
     },
     PyMethodDef{
         .ml_name  = "get_title_id",
-        .ml_meth  = reinterpret_cast<PyCFunction>(PyNca_get_title_id),
+        .ml_meth  = _PyCFunction_CAST(PyNca_get_title_id),
         .ml_flags = METH_NOARGS,
         .ml_doc   = "Gets the titleid associated with the Nca"
     },
     PyMethodDef{
         .ml_name  = "get_sdk_ver",
-        .ml_meth  = reinterpret_cast<PyCFunction>(PyNca_get_sdk_ver),
+        .ml_meth  = _PyCFunction_CAST(PyNca_get_sdk_ver),
         .ml_flags = METH_NOARGS,
         .ml_doc   = "Gets the SDK version of the Nca"
     },
     PyMethodDef{
         .ml_name  = "get_rights_id",
-        .ml_meth  = reinterpret_cast<PyCFunction>(PyNca_get_rights_id),
+        .ml_meth  = _PyCFunction_CAST(PyNca_get_rights_id),
         .ml_flags = METH_NOARGS,
         .ml_doc   = "Gets the rightsid associated with the Nca"
     },
     PyMethodDef{
         .ml_name  = "get_sections",
-        .ml_meth  = reinterpret_cast<PyCFunction>(PyNca_get_sections),
+        .ml_meth  = _PyCFunction_CAST(PyNca_get_sections),
         .ml_flags = METH_NOARGS,
         .ml_doc   = "Gets list of sections"
     },
     PyMethodDef{
         .ml_name  = "get_section_bounds",
-        .ml_meth  = reinterpret_cast<PyCFunction>(PyNca_get_section_bounds),
+        .ml_meth  = _PyCFunction_CAST(PyNca_get_section_bounds),
         .ml_flags = METH_NOARGS,
         .ml_doc   = "Gets list of section boundaries (offset/size)"
     },
@@ -1148,10 +1164,10 @@ static PyObject *PyXci_get_partitions(PyXci *self, [[maybe_unused]] PyObject *ar
             continue;
         }
 
-        std::memset(reinterpret_cast<void *>(&obj->ptr), 0, sizeof(obj->ptr));
+        obj->ptr.release();
         obj->ptr = std::make_unique<fnx::hac::Hfs>(part.get_hfs().clone_base());
 
-        PyDict_SetItem(dict, name, reinterpret_cast<PyObject *>(obj));
+        PyDict_SetItem(dict, name, _PyObject_CAST(obj));
         Py_VarDECREF(name, obj);
     }
 
@@ -1161,25 +1177,25 @@ static PyObject *PyXci_get_partitions(PyXci *self, [[maybe_unused]] PyObject *ar
 static std::array PyXci_methods = {
     PyMethodDef{
         .ml_name  = "is_valid",
-        .ml_meth  = reinterpret_cast<PyCFunction>(PyXci_is_valid),
+        .ml_meth  = _PyCFunction_CAST(PyXci_is_valid),
         .ml_flags = METH_NOARGS,
         .ml_doc   = "Checks file magic"
     },
     PyMethodDef{
         .ml_name  = "parse",
-        .ml_meth  = reinterpret_cast<PyCFunction>(PyXci_parse),
+        .ml_meth  = _PyCFunction_CAST(PyXci_parse),
         .ml_flags = METH_NOARGS,
         .ml_doc   = "Parses the Xci"
     },
     PyMethodDef{
         .ml_name  = "get_cart_type",
-        .ml_meth  = reinterpret_cast<PyCFunction>(PyXci_get_cart_type),
+        .ml_meth  = _PyCFunction_CAST(PyXci_get_cart_type),
         .ml_flags = METH_NOARGS,
         .ml_doc   = "Gets the cartridge type of the Xci"
     },
     PyMethodDef{
         .ml_name  = "get_partitions",
-        .ml_meth  = reinterpret_cast<PyCFunction>(PyXci_get_partitions),
+        .ml_meth  = _PyCFunction_CAST(PyXci_get_partitions),
         .ml_flags = METH_NOARGS,
         .ml_doc   = "Gets dict of partitions"
     },
@@ -1255,31 +1271,31 @@ static PyObject *fnxbinds_match(PyObject *self, PyObject **args, Py_ssize_t narg
 static std::array fnxbinds_methods = {
     PyMethodDef{
         .ml_name  = "set_key",
-        .ml_meth  = reinterpret_cast<PyCFunction>(fnxbinds_set_key),
+        .ml_meth  = _PyCFunction_CAST(fnxbinds_set_key),
         .ml_flags = METH_FASTCALL,
         .ml_doc   = "Sets a prod/dev key"
     },
     PyMethodDef{
         .ml_name  = "set_titlekey",
-        .ml_meth  = reinterpret_cast<PyCFunction>(fnxbinds_set_titlekey),
+        .ml_meth  = _PyCFunction_CAST(fnxbinds_set_titlekey),
         .ml_flags = METH_FASTCALL,
         .ml_doc   = "Sets a titlekey for a rightsid"
     },
     PyMethodDef{
         .ml_name  = "set_user_titlekey",
-        .ml_meth  = reinterpret_cast<PyCFunction>(fnxbinds_set_user_titlekey),
+        .ml_meth  = _PyCFunction_CAST(fnxbinds_set_user_titlekey),
         .ml_flags = METH_FASTCALL,
         .ml_doc   = "Sets the titlekey that will be used for every rightsid"
     },
     PyMethodDef{
         .ml_name  = "remove_user_titlekey",
-        .ml_meth  = reinterpret_cast<PyCFunction>(fnxbinds_remove_user_titlekey),
+        .ml_meth  = _PyCFunction_CAST(fnxbinds_remove_user_titlekey),
         .ml_flags = METH_NOARGS,
         .ml_doc   = "Removes the titlekey that will be used for every rightsid"
     },
     PyMethodDef{
         .ml_name  = "match",
-        .ml_meth  = reinterpret_cast<PyCFunction>(fnxbinds_match),
+        .ml_meth  = _PyCFunction_CAST(fnxbinds_match),
         .ml_flags = METH_FASTCALL,
         .ml_doc   = "Returns an id based on the format of the file"
     },
@@ -1335,34 +1351,34 @@ PyMODINIT_FUNC PyInit_fnxbinds() {
         goto exit;
 
     Py_VarINCREF(&PyFileBaseType);
-    PyModule_AddObject(m, "FileBase", reinterpret_cast<PyObject *>(&PyFileBaseType));
+    PyModule_AddObject(m, "FileBase", _PyObject_CAST(&PyFileBaseType));
 
     Py_VarINCREF(&PyPfsEntryType);
-    PyModule_AddObject(m, "PfsEntry", reinterpret_cast<PyObject *>(&PyPfsEntryType));
+    PyModule_AddObject(m, "PfsEntry", _PyObject_CAST(&PyPfsEntryType));
 
     Py_VarINCREF(&PyPfsType);
-    PyModule_AddObject(m, "Pfs", reinterpret_cast<PyObject *>(&PyPfsType));
+    PyModule_AddObject(m, "Pfs", _PyObject_CAST(&PyPfsType));
 
     Py_VarINCREF(&PyHfsEntryType);
-    PyModule_AddObject(m, "HfsEntry", reinterpret_cast<PyObject *>(&PyHfsEntryType));
+    PyModule_AddObject(m, "HfsEntry", _PyObject_CAST(&PyHfsEntryType));
 
     Py_VarINCREF(&PyHfsType);
-    PyModule_AddObject(m, "Hfs", reinterpret_cast<PyObject *>(&PyHfsType));
+    PyModule_AddObject(m, "Hfs", _PyObject_CAST(&PyHfsType));
 
     Py_VarINCREF(&PyRomfsFileEntryType);
-    PyModule_AddObject(m, "RomfsFileEntry", reinterpret_cast<PyObject *>(&PyRomfsFileEntryType));
+    PyModule_AddObject(m, "RomfsFileEntry", _PyObject_CAST(&PyRomfsFileEntryType));
 
     Py_VarINCREF(&PyRomfsDirEntryType);
-    PyModule_AddObject(m, "RomfsDirEntry", reinterpret_cast<PyObject *>(&PyRomfsDirEntryType));
+    PyModule_AddObject(m, "RomfsDirEntry", _PyObject_CAST(&PyRomfsDirEntryType));
 
     Py_VarINCREF(&PyRomfsType);
-    PyModule_AddObject(m, "Romfs", reinterpret_cast<PyObject *>(&PyRomfsType));
+    PyModule_AddObject(m, "Romfs", _PyObject_CAST(&PyRomfsType));
 
     Py_VarINCREF(&PyNcaType);
-    PyModule_AddObject(m, "Nca", reinterpret_cast<PyObject *>(&PyNcaType));
+    PyModule_AddObject(m, "Nca", _PyObject_CAST(&PyNcaType));
 
     Py_VarINCREF(&PyXciType);
-    PyModule_AddObject(m, "Xci", reinterpret_cast<PyObject *>(&PyXciType));
+    PyModule_AddObject(m, "Xci", _PyObject_CAST(&PyXciType));
 
     return m;
 

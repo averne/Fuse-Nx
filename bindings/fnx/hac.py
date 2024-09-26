@@ -62,6 +62,9 @@ class File(io.RawIOBase):
     def write(self, b: bytes) -> int:
         return self.base.write(b)
 
+    def clone(self):
+        return File(self.base.clone())
+
 
 class Format(enum.IntEnum):
     Pfs     = 0

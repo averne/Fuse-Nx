@@ -52,7 +52,7 @@ jobs:
 
     - run: meson compile -C build -v
 
-    - uses: actions/upload-artifact@v1
+    - uses: actions/upload-artifact@v4
       if: failure()
       with:
         name: compile-log

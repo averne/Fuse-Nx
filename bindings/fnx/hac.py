@@ -362,8 +362,6 @@ class Nca:
     @property
     def num_sections(self):
         """ Returns the number of sections contained in the Nca """
-        if not self.parsed:
-            self.parse()
         return len(self._sections)
 
     @property
@@ -374,10 +372,13 @@ class Nca:
         return self._sections
 
     @property
+    def section_types(self):
+        """ Returns a list of types within the Nca """
+        return [Format(_) for _ in self.base.get_section_types()]
+
+    @property
     def section_bounds(self):
         """ Returns a list of section boundaries (offset/size) within the Nca """
-        if not self.parsed:
-            self.parse()
         return self.base.get_section_bounds()
 
 

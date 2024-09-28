@@ -84,7 +84,7 @@ std::vector<FileEntry> NcaContainer::read_files() {
     out.reserve(this->container->get_num_sections());
     for (std::size_t i = 0; i < this->container->get_num_sections(); ++i) {
         auto &section = this->container->get_section(i);
-        if (section.get_type() == hac::Nca::Section::Type::Pfs)
+        if (section.get_type() == hac::Nca::SectionType::Pfs)
             out.emplace_back(std::string(NcaContainer::section_names[i]) + ".nsp",   section.get_pfs().clone_base(), true);
         else
             out.emplace_back(std::string(NcaContainer::section_names[i]) + ".romfs", section.get_romfs().clone_base(), true);

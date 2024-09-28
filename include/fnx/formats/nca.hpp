@@ -35,6 +35,11 @@ class Nca final: public FormatBase {
         constexpr static auto nca2_magic = utils::FourCC('N', 'C', 'A', '2');
         constexpr static auto nca3_magic = utils::FourCC('N', 'C', 'A', '3');
 
+        enum class SectionType {
+            Pfs,
+            RomFs,
+        };
+
         enum class DistributionType: std::uint8_t {
             System,
             Gamecard,
@@ -47,6 +52,12 @@ class Nca final: public FormatBase {
             Manual,
             Data,
             PublicData,
+        };
+
+        struct SectionInfo {
+            SectionType type;
+            std::size_t offset, size;
+            std::size_t container_offset, container_size;
         };
 
         class Section;
@@ -93,8 +104,10 @@ class Nca final: public FormatBase {
         }
 
         std::size_t get_num_sections() const {
-            return this->sections.size();
+            return this->num_sections;
         }
+
+        std::vector<SectionInfo> get_section_infos() const;
 
         std::vector<Section> &get_sections() {
             return this->sections;
@@ -234,17 +247,11 @@ class Nca final: public FormatBase {
     public:
         class Section {
             public:
-                enum class Type {
-                    Pfs,
-                    RomFs,
-                };
-
-            public:
                 Section(const FsEntry &entry, const FsHeader &header, const crypt::AesKey &key, std::unique_ptr<io::FileBase> &&base);
                 Section(Section &&other) noexcept;
                 ~Section();
 
-                Type get_type() const {
+                SectionType get_type() const {
                     return this->type;
                 }
 
@@ -273,12 +280,14 @@ class Nca final: public FormatBase {
                 }
 
             protected:
-                Type type;
+                SectionType type;
                 std::size_t offset, size;
                 std::aligned_union_t<0, Pfs, RomFs> container;
         };
 
     private:
+        static SectionInfo make_section_info(const FsEntry &entry, const FsHeader &header);
+
         bool decrypt_titlekey();
         void decrypt_keyarea();
 
@@ -290,6 +299,7 @@ class Nca final: public FormatBase {
         std::uint8_t  crypto_type;
         crypt::AesKey body_key;
 
+        std::size_t num_sections = 0;
         std::vector<Section> sections;
 };
 

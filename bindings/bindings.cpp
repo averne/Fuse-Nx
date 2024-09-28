@@ -1002,7 +1002,7 @@ static PyObject *PyNca_get_sections(PyNca *self, [[maybe_unused]] PyObject *args
         return nullptr;
 
     for (auto &section: self->ptr->get_sections()) {
-        if (section.get_type() == fnx::hac::Nca::Section::Type::Pfs) {
+        if (section.get_type() == fnx::hac::Nca::SectionType::Pfs) {
             auto *obj = PyObject_New(PyPfs, &PyPfsType);
             if (!obj)
                 continue;
@@ -1028,18 +1028,33 @@ static PyObject *PyNca_get_sections(PyNca *self, [[maybe_unused]] PyObject *args
     return list;
 }
 
+static PyObject *PyNca_get_section_types(PyNca *self, [[maybe_unused]] PyObject *args) {
+    auto *list = PyList_New(0);
+    if (!list)
+        return nullptr;
+
+    for (auto &section: self->ptr->get_section_infos()) {
+        auto t = (section.type == fnx::hac::Nca::SectionType::Pfs) ? fnx::hac::Format::Pfs : fnx::hac::Format::RomFs;
+        auto *type = PyLong_FromLong(static_cast<long>(t));
+        if (!type)
+            return nullptr;
+
+        PyList_Append(list, type);
+        Py_VarDECREF(type);
+    }
+
+    return list;
+}
+
 static PyObject *PyNca_get_section_bounds(PyNca *self, [[maybe_unused]] PyObject *args) {
     auto *list = PyList_New(0);
     if (!list)
         return nullptr;
 
-    for (auto &section: self->ptr->get_sections()) {
-        auto *tuple = PyTuple_New(2);
+    for (auto &section: self->ptr->get_section_infos()) {
+        auto *tuple = Py_BuildValue("(kk)", section.offset, section.size);
         if (!tuple)
             return nullptr;
-
-        PyTuple_SetItem(tuple, 0, PyLong_FromSize_t(section.get_offset()));
-        PyTuple_SetItem(tuple, 1, PyLong_FromSize_t(section.get_size()));
 
         PyList_Append(list, tuple);
         Py_VarDECREF(tuple);
@@ -1102,6 +1117,12 @@ static std::array PyNca_methods = {
         .ml_meth  = _PyCFunction_CAST(PyNca_get_sections),
         .ml_flags = METH_NOARGS,
         .ml_doc   = "Gets list of sections"
+    },
+    PyMethodDef{
+        .ml_name  = "get_section_types",
+        .ml_meth  = _PyCFunction_CAST(PyNca_get_section_types),
+        .ml_flags = METH_NOARGS,
+        .ml_doc   = "Gets list of section types"
     },
     PyMethodDef{
         .ml_name  = "get_section_bounds",

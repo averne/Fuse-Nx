@@ -26,45 +26,57 @@
 
 namespace fnx::hac {
 
-Nca::Section::Section(const FsEntry &entry, const FsHeader &header, const crypt::AesKey &key, std::unique_ptr<io::FileBase> &&base):
-        offset(entry.start_offset()), size(entry.end_offset() - entry.start_offset()) {
-    this->type = ((header.fs_type == FsType::Pfs) && (header.hash_type == HashType::HierarchicalSha256)) ?
-        Type::Pfs : Type::RomFs;
-    auto nonce = __builtin_bswap64(header.nonce);
-
-    std::size_t offset, size;
-    if (this->type == Type::Pfs) {
-        offset = header.pfs_superblock.pfs_offset + this->offset;
-        size   = header.pfs_superblock.pfs_size;
-    } else {
-        offset = header.romfs_superblock.level_headers[RomFsSuperblock::ivfc_max_lvls - 1].offset + this->offset;
-        size   = header.romfs_superblock.level_headers[RomFsSuperblock::ivfc_max_lvls - 1].size;
-    }
+Nca::Section::Section(const FsEntry &entry, const FsHeader &header, const crypt::AesKey &key, std::unique_ptr<io::FileBase> &&base) {
+    auto info = Nca::make_section_info(entry, header);
+    this->type   = info.type;
+    this->offset = info.offset;
+    this->size   = info.size;
 
     std::unique_ptr<io::FileBase> file;
-    if (header.encryption_type == EncryptionType::AesCtr)
-        file = std::make_unique<io::CtrFile>(std::move(base), crypt::AesCtr(key, nonce), size, offset);
-    else
-        file = std::make_unique<io::OffsetFile>(std::move(base), size, offset);
+    if (header.encryption_type == EncryptionType::AesCtr) {
+        auto nonce = __builtin_bswap64(header.nonce);
+        file = std::make_unique<io::CtrFile>(std::move(base), crypt::AesCtr(key, nonce), info.container_size, info.container_offset);
+    } else {
+        file = std::make_unique<io::OffsetFile>(std::move(base), info.container_size, info.container_offset);
+    }
 
-    if (this->type == Type::Pfs)
+    if (this->type == SectionType::Pfs)
         std::construct_at(reinterpret_cast<Pfs *>  (&this->container), std::move(file));
     else
         std::construct_at(reinterpret_cast<RomFs *>(&this->container), std::move(file));
 }
 
 Nca::Section::Section(Section &&other) noexcept: type(other.type), offset(other.offset), size(other.size) {
-    if (this->type == Type::Pfs)
+    if (this->type == SectionType::Pfs)
         std::construct_at(reinterpret_cast<Pfs *>  (&this->container), std::move(other.get_pfs()));
     else
         std::construct_at(reinterpret_cast<RomFs *>(&this->container), std::move(other.get_romfs()));
 }
 
 Nca::Section::~Section() {
-    if (this->type == Type::Pfs)
+    if (this->type == SectionType::Pfs)
         std::destroy_at(reinterpret_cast<Pfs *>  (&this->container));
     else
         std::destroy_at(reinterpret_cast<RomFs *>(&this->container));
+}
+
+Nca::SectionInfo Nca::make_section_info(const FsEntry &entry, const Nca::FsHeader &header) {
+    SectionInfo out;
+    out.type = ((header.fs_type == FsType::Pfs) && (header.hash_type == HashType::HierarchicalSha256)) ?
+        SectionType::Pfs : SectionType::RomFs;
+
+    out.offset = entry.start_offset();
+    out.size   = entry.end_offset() - entry.start_offset();
+
+    if (out.type == SectionType::Pfs) {
+        out.container_offset = header.pfs_superblock.pfs_offset + out.offset;
+        out.container_size   = header.pfs_superblock.pfs_size;
+    } else {
+        out.container_offset = header.romfs_superblock.level_headers[RomFsSuperblock::ivfc_max_lvls - 1].offset + out.offset;
+        out.container_size   = header.romfs_superblock.level_headers[RomFsSuperblock::ivfc_max_lvls - 1].size;
+    }
+
+    return out;
 }
 
 void Nca::decrypt_header(Header &header) {
@@ -100,6 +112,10 @@ bool Nca::match(const void *data, std::size_t size) {
 Nca::Nca(std::unique_ptr<io::FileBase> &&base): FormatBase(std::move(base)) {
     this->base->read_at(0, this->header);
     Nca::decrypt_header(this->header);
+
+    for (std::size_t i = 0; i < Nca::max_sections; ++i)
+        if (auto entry = this->header.fs_entries[i]; entry.media_start_offset != 0) // Section exists
+            ++this->num_sections;
 }
 
 bool Nca::decrypt_titlekey() {
@@ -152,6 +168,17 @@ bool Nca::parse() {
     }
 
     return true;
+}
+
+std::vector<Nca::SectionInfo> Nca::get_section_infos() const {
+    std::vector<Nca::SectionInfo> out;
+    out.reserve(Nca::max_sections);
+
+    for (std::size_t i = 0; i < Nca::max_sections; ++i)
+        if (auto entry = this->header.fs_entries[i]; entry.media_start_offset != 0) // Section exists
+            out.emplace_back(this->make_section_info(entry, this->header.fs_headers[i]));
+
+    return out;
 }
 
 } // namespace fnx::hac

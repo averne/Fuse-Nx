@@ -40,6 +40,7 @@ class FileBase {
     public:
         virtual ~FileBase() = default;
 
+        virtual std::size_t parent_offset() const = 0;
         virtual std::unique_ptr<FileBase> clone() const = 0;
 
         std::uint64_t size() const {
@@ -121,6 +122,10 @@ class File final: public FileBase {
             this->open(path, mode);
         }
 
+        virtual std::size_t parent_offset() const override {
+            return 0;
+        }
+
         std::unique_ptr<FileBase> clone() const override {
             return std::make_unique<File>(*this);
         }
@@ -169,6 +174,10 @@ class OffsetFile final: public FileBase {
 
         OffsetFile(OffsetFile &&other) = default;
 
+        virtual std::size_t parent_offset() const override {
+            return this->base->parent_offset() + this->offset;
+        }
+
         virtual std::unique_ptr<FileBase> clone() const override {
             return std::make_unique<OffsetFile>(*this);
         }
@@ -202,6 +211,10 @@ class CtrFile final: public FileBase {
         }
 
         CtrFile(CtrFile &&other) = default;
+
+        virtual std::size_t parent_offset() const override {
+            return this->base->parent_offset() + this->offset;
+        }
 
         virtual std::unique_ptr<FileBase> clone() const override {
             return std::make_unique<CtrFile>(*this);

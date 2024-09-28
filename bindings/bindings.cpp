@@ -57,7 +57,7 @@ inline void Py_VarXINCREF(Args &&...args) {
     (xincref(args), ...);
 }
 
-class IoFile: public fnx::io::FileBase {
+class IoFile final: public fnx::io::FileBase {
     public:
         IoFile(PyObject *object, std::size_t size): object(object) {
             Py_VarINCREF(this->object);
@@ -68,6 +68,10 @@ class IoFile: public fnx::io::FileBase {
 
         virtual ~IoFile() override {
             Py_VarDECREF(this->object);
+        }
+
+        virtual std::size_t parent_offset() const override {
+            return 0;
         }
 
         virtual std::unique_ptr<FileBase> clone() const override {
@@ -150,6 +154,10 @@ static int PyFileBase_init(PyFileBase *self, PyObject *args, PyObject *kwds) {
 static void PyFileBase_dealloc(PyFileBase *self) {
     self->ptr.reset();
     Py_TYPE(self)->tp_free(self);
+}
+
+static PyObject *PyFileBase_parent_offset(PyFileBase *self, [[maybe_unused]] PyObject *args) {
+    return PyLong_FromUnsignedLong(self->ptr->parent_offset());
 }
 
 static PyObject *PyFileBase_clone(PyFileBase *self, [[maybe_unused]] PyObject *args) {
@@ -239,6 +247,12 @@ static std::array PyFileBase_methods = {
         .ml_meth  = _PyCFunction_CAST(PyFileBase_write),
         .ml_flags = METH_FASTCALL,
         .ml_doc   = "Write data to file"
+    },
+    PyMethodDef{
+        .ml_name  = "parent_offset",
+        .ml_meth  = _PyCFunction_CAST(PyFileBase_parent_offset),
+        .ml_flags = METH_FASTCALL,
+        .ml_doc   = "Returns the offset in the root file object"
     },
     PyMethodDef{
         .ml_name  = "clone",

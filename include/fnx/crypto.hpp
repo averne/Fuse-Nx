@@ -203,9 +203,9 @@ class AesCbc final: public CipherBase<MBEDTLS_CIPHER_AES_128_CBC, AesKey> {
 };
 
 #ifdef USE_GCRYPT
-class AesCtr: public CipherBase<GCRY_CIPHER_AES128, GCRY_CIPHER_MODE_CTR, AesKey> {
+class AesCtr final: public CipherBase<GCRY_CIPHER_AES128, GCRY_CIPHER_MODE_CTR, AesKey> {
 #else
-class AesCtr: public CipherBase<MBEDTLS_CIPHER_AES_128_CTR, AesKey> {
+class AesCtr final: public CipherBase<MBEDTLS_CIPHER_AES_128_CTR, AesKey> {
 #endif
     public:
         using Ctr = std::array<std::uint64_t, CipherBase::block_size / sizeof(std::uint64_t)>;

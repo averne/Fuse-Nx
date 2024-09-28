@@ -62,6 +62,9 @@ class File(io.RawIOBase):
     def write(self, b: bytes) -> int:
         return self.base.write(b)
 
+    def parent_offset(self):
+        return self.base.parent_offset()
+
     def clone(self):
         return File(self.base.clone())
 

@@ -45,6 +45,11 @@ class Hfs final: public FormatBase {
         Hfs() = default;
         Hfs(std::unique_ptr<io::FileBase> &&base);
 
+        Hfs(Hfs &other): FormatBase(other.clone_base()), header(other.header),
+            strings_offset(other.strings_offset), data_offset(other.data_offset),
+            entries(other.entries), names_table(other.names_table) { }
+        Hfs(Hfs &&other) = default;
+
         bool parse();
 
         bool is_valid() const {

@@ -139,6 +139,7 @@ bool Nca::parse() {
         this->body_key = this->header.key_area[2];
     }
 
+    this->sections.reserve(Nca::max_sections);
     for (std::size_t i = 0; i < Nca::max_sections; ++i) {
         if (auto entry = this->header.fs_entries[i]; entry.media_start_offset != 0) { // Section exists
             auto enc_type = this->header.fs_headers[i].encryption_type;

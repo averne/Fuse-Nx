@@ -75,6 +75,10 @@ class RomFs final: public FormatBase {
 
         RomFs() = default;
         RomFs(std::unique_ptr<io::FileBase> &&base);
+        RomFs(RomFs &other): FormatBase(other.clone_base()), header(other.header),
+            dir_hash_tbl(other.dir_hash_tbl), file_hash_tbl(other.file_hash_tbl),
+            dir_meta_tbl(other.dir_meta_tbl), file_meta_tbl(other.file_meta_tbl) { }
+        RomFs(RomFs &&other) = default;
 
         // Fast path for parsing the whole rom
         // Will not populate parent/meta fields and children/files lists in directories

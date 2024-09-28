@@ -44,6 +44,11 @@ class Pfs final: public FormatBase {
         Pfs() = default;
         Pfs(std::unique_ptr<io::FileBase> &&base);
 
+        Pfs(Pfs &other): FormatBase(other.clone_base()), header(other.header),
+            strings_offset(other.strings_offset), data_offset(other.data_offset),
+            entries(other.entries), names_table(other.names_table) { }
+        Pfs(Pfs &&other) = default;
+
         bool parse();
 
         bool is_valid() const {

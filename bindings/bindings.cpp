@@ -1003,25 +1003,25 @@ static PyObject *PyNca_get_sections(PyNca *self, [[maybe_unused]] PyObject *args
 
     for (auto &section: self->ptr->get_sections()) {
         if (section.get_type() == fnx::hac::Nca::Section::Type::Pfs) {
-            auto *pfs = PyObject_New(PyPfs, &PyPfsType);
-            if (!pfs)
+            auto *obj = PyObject_New(PyPfs, &PyPfsType);
+            if (!obj)
                 continue;
 
-            pfs->ptr.release();
-            pfs->ptr = std::make_unique<fnx::hac::Pfs>(section.get_pfs().clone_base());
+            obj->ptr.release();
+            obj->ptr = std::make_unique<fnx::hac::Pfs>(section.get_pfs());
 
-            PyList_Append(list, _PyObject_CAST(pfs));
-            Py_VarDECREF(pfs);
+            PyList_Append(list, _PyObject_CAST(obj));
+            Py_VarDECREF(obj);
         } else {
-            auto *romfs = PyObject_New(PyRomfs, &PyRomfsType);
-            if (!romfs)
+            auto *obj = PyObject_New(PyRomfs, &PyRomfsType);
+            if (!obj)
                 continue;
 
-            romfs->ptr.release();
-            romfs->ptr = std::make_unique<fnx::hac::RomFs>(section.get_romfs().clone_base());
+            obj->ptr.release();
+            obj->ptr = std::make_unique<fnx::hac::RomFs>(section.get_romfs());
 
-            PyList_Append(list, _PyObject_CAST(romfs));
-            Py_VarDECREF(romfs);
+            PyList_Append(list, _PyObject_CAST(obj));
+            Py_VarDECREF(obj);
         }
     }
 
@@ -1179,7 +1179,7 @@ static PyObject *PyXci_get_partitions(PyXci *self, [[maybe_unused]] PyObject *ar
         }
 
         obj->ptr.release();
-        obj->ptr = std::make_unique<fnx::hac::Hfs>(part.get_hfs().clone_base());
+        obj->ptr = std::make_unique<fnx::hac::Hfs>(part.get_hfs());
 
         PyDict_SetItem(dict, name, _PyObject_CAST(obj));
         Py_VarDECREF(name, obj);

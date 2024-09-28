@@ -1364,6 +1364,13 @@ PyMODINIT_FUNC PyInit_fnxbinds() {
     if (!m)
         goto exit;
 
+    PyModule_AddIntConstant(m, "FORMAT_PFS",   static_cast<long>(fnx::hac::Format::Pfs));
+    PyModule_AddIntConstant(m, "FORMAT_HFS",   static_cast<long>(fnx::hac::Format::Hfs));
+    PyModule_AddIntConstant(m, "FORMAT_ROMFS", static_cast<long>(fnx::hac::Format::RomFs));
+    PyModule_AddIntConstant(m, "FORMAT_NCA",   static_cast<long>(fnx::hac::Format::Nca));
+    PyModule_AddIntConstant(m, "FORMAT_XCI",   static_cast<long>(fnx::hac::Format::Xci));
+    PyModule_AddIntConstant(m, "FORMAT_UNK",   static_cast<long>(fnx::hac::Format::Unknown));
+
     Py_VarINCREF(&PyFileBaseType);
     PyModule_AddObject(m, "FileBase", _PyObject_CAST(&PyFileBaseType));
 

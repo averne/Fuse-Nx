@@ -20,6 +20,13 @@
 
 from typing import List, Tuple, Dict, Union
 
+FORMAT_PFS:   int
+FORMAT_HFS:   int
+FORMAT_ROMFS: int
+FORMAT_NCA:   int
+FORMAT_XCI:   int
+FORMAT_UNK:   int
+
 class FileBase:
     def __init__(self, *args) -> None: ...
 

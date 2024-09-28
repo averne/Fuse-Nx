@@ -70,12 +70,12 @@ class File(io.RawIOBase):
 
 
 class Format(enum.IntEnum):
-    Pfs     = 0
-    Hfs     = 1
-    Romfs   = 2
-    Nca     = 3
-    Xci     = 4
-    Unknown = 5
+    Pfs     = fnxbinds.FORMAT_PFS
+    Hfs     = fnxbinds.FORMAT_HFS
+    Romfs   = fnxbinds.FORMAT_ROMFS
+    Nca     = fnxbinds.FORMAT_NCA
+    Xci     = fnxbinds.FORMAT_XCI
+    Unknown = fnxbinds.FORMAT_UNK
 
 
 class Pfs:

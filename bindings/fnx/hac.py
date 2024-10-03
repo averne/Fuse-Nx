@@ -381,6 +381,11 @@ class Nca:
         """ Returns a list of section boundaries (offset/size) within the Nca """
         return self.base.get_section_bounds()
 
+    @property
+    def container_bounds(self):
+        """ Returns a list of container boundaries (offset/size) within the Nca """
+        return self.base.get_container_bounds()
+
 
 class Xci:
     """ Class representing an Xci """

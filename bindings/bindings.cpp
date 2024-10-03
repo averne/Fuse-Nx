@@ -59,15 +59,15 @@ inline void Py_VarXINCREF(Args &&...args) {
 
 class IoFile final: public fnx::io::FileBase {
     public:
-        IoFile(PyObject *object, std::size_t size): object(object) {
-            Py_VarINCREF(this->object);
+        IoFile(PyObject *object, std::size_t size) {
+            Py_XSETREF(this->object, Py_XNewRef(object));
             this->fsize = size;
         }
 
         IoFile(const IoFile &other): IoFile(other.object, other.fsize) { }
 
         virtual ~IoFile() override {
-            Py_VarDECREF(this->object);
+            Py_CLEAR(this->object);
         }
 
         virtual std::size_t parent_offset() const override {
@@ -112,7 +112,7 @@ class IoFile final: public fnx::io::FileBase {
         }
 
     private:
-        PyObject *object;
+        PyObject *object = nullptr;
 };
 
 } // namespace
@@ -778,7 +778,7 @@ static PyObject *PyRomfs_get_entries(PyRomfs *self, [[maybe_unused]] PyObject *a
                 return false;
 
             obj->name   = nullptr;
-            obj->parent = _PyObject_CAST(parent); Py_VarINCREF(parent);
+            obj->parent = Py_NewRef(parent);
             obj->offset = entry->offset;
             obj->size   = entry->size;
 
@@ -807,7 +807,7 @@ static PyObject *PyRomfs_get_entries(PyRomfs *self, [[maybe_unused]] PyObject *a
                 return false;
 
             obj->name   = obj->children = obj->files = nullptr;
-            obj->parent = _PyObject_CAST(parent); Py_VarINCREF(parent);
+            obj->parent = Py_NewRef(parent);
 
             obj->name = PyUnicode_FromStringAndSize(entry->name.data(), entry->name.size());
             if (!obj->name)
@@ -848,7 +848,7 @@ static PyObject *PyRomfs_get_entries(PyRomfs *self, [[maybe_unused]] PyObject *a
         return Py_VarDECREF(file_dict, dir_dict), nullptr;
 
     root_obj->name = root_obj->children = root_obj->files = nullptr;
-    root_obj->parent = Py_None; Py_VarINCREF(Py_None);
+    root_obj->parent = Py_NewRef(Py_None);
 
     root_obj->name = PyUnicode_FromStringAndSize("", std::strlen(""));
     if (!root_obj->name)
@@ -1063,6 +1063,23 @@ static PyObject *PyNca_get_section_bounds(PyNca *self, [[maybe_unused]] PyObject
     return list;
 }
 
+static PyObject *PyNca_get_container_bounds(PyNca *self, [[maybe_unused]] PyObject *args) {
+    auto *list = PyList_New(0);
+    if (!list)
+        return nullptr;
+
+    for (auto &section: self->ptr->get_section_infos()) {
+        auto *tuple = Py_BuildValue("(kk)", section.container_offset, section.container_size);
+        if (!tuple)
+            return nullptr;
+
+        PyList_Append(list, tuple);
+        Py_VarDECREF(tuple);
+    }
+
+    return list;
+}
+
 static std::array PyNca_methods = {
     PyMethodDef{
         .ml_name  = "is_valid",
@@ -1129,6 +1146,12 @@ static std::array PyNca_methods = {
         .ml_meth  = _PyCFunction_CAST(PyNca_get_section_bounds),
         .ml_flags = METH_NOARGS,
         .ml_doc   = "Gets list of section boundaries (offset/size)"
+    },
+    PyMethodDef{
+        .ml_name  = "get_container_bounds",
+        .ml_meth  = _PyCFunction_CAST(PyNca_get_container_bounds),
+        .ml_flags = METH_NOARGS,
+        .ml_doc   = "Gets list of container boundaries (offset/size)"
     },
     PyMethodDef{ nullptr },
 };
@@ -1392,35 +1415,16 @@ PyMODINIT_FUNC PyInit_fnxbinds() {
     PyModule_AddIntConstant(m, "FORMAT_XCI",   static_cast<long>(fnx::hac::Format::Xci));
     PyModule_AddIntConstant(m, "FORMAT_UNK",   static_cast<long>(fnx::hac::Format::Unknown));
 
-    Py_VarINCREF(&PyFileBaseType);
-    PyModule_AddObject(m, "FileBase", _PyObject_CAST(&PyFileBaseType));
-
-    Py_VarINCREF(&PyPfsEntryType);
-    PyModule_AddObject(m, "PfsEntry", _PyObject_CAST(&PyPfsEntryType));
-
-    Py_VarINCREF(&PyPfsType);
-    PyModule_AddObject(m, "Pfs", _PyObject_CAST(&PyPfsType));
-
-    Py_VarINCREF(&PyHfsEntryType);
-    PyModule_AddObject(m, "HfsEntry", _PyObject_CAST(&PyHfsEntryType));
-
-    Py_VarINCREF(&PyHfsType);
-    PyModule_AddObject(m, "Hfs", _PyObject_CAST(&PyHfsType));
-
-    Py_VarINCREF(&PyRomfsFileEntryType);
-    PyModule_AddObject(m, "RomfsFileEntry", _PyObject_CAST(&PyRomfsFileEntryType));
-
-    Py_VarINCREF(&PyRomfsDirEntryType);
-    PyModule_AddObject(m, "RomfsDirEntry", _PyObject_CAST(&PyRomfsDirEntryType));
-
-    Py_VarINCREF(&PyRomfsType);
-    PyModule_AddObject(m, "Romfs", _PyObject_CAST(&PyRomfsType));
-
-    Py_VarINCREF(&PyNcaType);
-    PyModule_AddObject(m, "Nca", _PyObject_CAST(&PyNcaType));
-
-    Py_VarINCREF(&PyXciType);
-    PyModule_AddObject(m, "Xci", _PyObject_CAST(&PyXciType));
+    PyModule_AddObject(m, "FileBase",       Py_NewRef(&PyFileBaseType));
+    PyModule_AddObject(m, "PfsEntry",       Py_NewRef(&PyPfsEntryType));
+    PyModule_AddObject(m, "Pfs",            Py_NewRef(&PyPfsType));
+    PyModule_AddObject(m, "HfsEntry",       Py_NewRef(&PyHfsEntryType));
+    PyModule_AddObject(m, "Hfs",            Py_NewRef(&PyHfsType));
+    PyModule_AddObject(m, "RomfsFileEntry", Py_NewRef(&PyRomfsFileEntryType));
+    PyModule_AddObject(m, "RomfsDirEntry",  Py_NewRef(&PyRomfsDirEntryType));
+    PyModule_AddObject(m, "Romfs",          Py_NewRef(&PyRomfsType));
+    PyModule_AddObject(m, "Nca",            Py_NewRef(&PyNcaType));
+    PyModule_AddObject(m, "Xci",            Py_NewRef(&PyXciType));
 
     return m;
 

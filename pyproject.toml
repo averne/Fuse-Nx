@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=74.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fnx"
+version = "1.1.2"
+authors = [
+    { name = "averne" },
+]
+description = "Library for parsing and reading Nintendo Switch file formats"
+readme = {file = "README.txt", content-type = "text/markdown"}
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+
+[tool.setuptools.packages.find]
+where = ["bindings"]
+
+[[tool.setuptools.ext-modules]]
+name = "fnxbinds"
+sources = [
+    "bindings/bindings.cpp",
+    "lib/io.cpp",
+    "lib/keyset.cpp",
+    "lib/crypto.cpp",
+    "lib/pfs.cpp",
+    "lib/hfs.cpp",
+    "lib/romfs.cpp",
+    "lib/nca.cpp",
+    "lib/xci.cpp",
+]
+include-dirs = ["include"]
+#define-macros = [["USE_GCRYPT"]]
+extra-compile-args = ["-std=gnu++20", "-DUSE_GCRYPT"]
+libraries = ["gcrypt"]

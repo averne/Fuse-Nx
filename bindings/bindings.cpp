@@ -174,13 +174,10 @@ static PyObject *PyFileBase_size(PyFileBase *self, [[maybe_unused]] PyObject *ar
     return PyLong_FromUnsignedLong(self->ptr->size());
 }
 
-static PyObject *PyFileBase_seek(PyFileBase *self, PyObject **args, Py_ssize_t nargs) {
-    if (nargs != 2)
-        return nullptr;
-
+static PyObject *PyFileBase_seek(PyFileBase *self, PyObject *args) {
     std::size_t where = 0;
     fnx::io::Whence whence = fnx::io::Whence::Set;
-    if (!_PyArg_ParseStack(args, nargs, "kI", &where, &whence))
+    if (!PyArg_ParseTuple(args, "kI", &where, &whence))
         return nullptr;
 
     self->ptr->seek(where, whence);
@@ -191,12 +188,9 @@ static PyObject *PyFileBase_tell(PyFileBase *self, [[maybe_unused]] PyObject *ar
     return PyLong_FromUnsignedLong(self->ptr->tell());
 }
 
-static PyObject *PyFileBase_read(PyFileBase *self, PyObject **args, Py_ssize_t nargs) {
-    if (nargs != 1)
-        return nullptr;
-
+static PyObject *PyFileBase_read(PyFileBase *self, PyObject *args) {
     Py_buffer buffer;
-    if (!_PyArg_ParseStack(args, nargs, "y*", &buffer))
+    if (!PyArg_ParseTuple(args, "y*", &buffer))
         return nullptr;
 
     FNX_SCOPEGUARD([&buffer] { PyBuffer_Release(&buffer); });
@@ -205,12 +199,9 @@ static PyObject *PyFileBase_read(PyFileBase *self, PyObject **args, Py_ssize_t n
     return PyLong_FromUnsignedLong(self->ptr->read(buffer.buf, size));
 }
 
-static PyObject *PyFileBase_write(PyFileBase *self, PyObject **args, Py_ssize_t nargs) {
-    if (nargs != 1)
-        return nullptr;
-
+static PyObject *PyFileBase_write(PyFileBase *self, PyObject *args) {
     Py_buffer buffer;
-    if (!_PyArg_ParseStack(args, nargs, "y*", &buffer))
+    if (!PyArg_ParseTuple(args, "y*", &buffer))
         return nullptr;
 
     FNX_SCOPEGUARD([&buffer] { PyBuffer_Release(&buffer); });
@@ -227,7 +218,7 @@ static std::array PyFileBase_methods = {
     PyMethodDef{
         .ml_name  = "seek",
         .ml_meth  = _PyCFunction_CAST(PyFileBase_seek),
-        .ml_flags = METH_FASTCALL,
+        .ml_flags = METH_VARARGS,
         .ml_doc   = "Sets file position"
     },
     PyMethodDef{
@@ -239,25 +230,25 @@ static std::array PyFileBase_methods = {
     PyMethodDef{
         .ml_name  = "read",
         .ml_meth  = _PyCFunction_CAST(PyFileBase_read),
-        .ml_flags = METH_FASTCALL,
+        .ml_flags = METH_VARARGS,
         .ml_doc   = "Reads file data"
     },
     PyMethodDef{
         .ml_name  = "write",
         .ml_meth  = _PyCFunction_CAST(PyFileBase_write),
-        .ml_flags = METH_FASTCALL,
+        .ml_flags = METH_VARARGS,
         .ml_doc   = "Write data to file"
     },
     PyMethodDef{
         .ml_name  = "parent_offset",
         .ml_meth  = _PyCFunction_CAST(PyFileBase_parent_offset),
-        .ml_flags = METH_FASTCALL,
+        .ml_flags = METH_VARARGS,
         .ml_doc   = "Returns the offset in the root file object"
     },
     PyMethodDef{
         .ml_name  = "clone",
         .ml_meth  = _PyCFunction_CAST(PyFileBase_clone),
-        .ml_flags = METH_FASTCALL,
+        .ml_flags = METH_VARARGS,
         .ml_doc   = "Clone file"
     },
     PyMethodDef{ nullptr },
@@ -379,12 +370,9 @@ static PyObject *PyPfs_get_entries(PyPfs *self, [[maybe_unused]] PyObject *args)
     return dict;
 }
 
-static PyObject *PyPfs_open(PyPfs *self, PyObject **args, Py_ssize_t nargs) {
-    if (nargs != 1)
-        return nullptr;
-
+static PyObject *PyPfs_open(PyPfs *self, PyObject *args) {
     PyPfsEntry *entry = nullptr;
-    if (!_PyArg_ParseStack(args, nargs, "O", &entry))
+    if (!PyArg_ParseTuple(args, "O", &entry))
         return nullptr;
 
     auto *file = PyObject_New(PyFileBase, &PyFileBaseType);
@@ -418,7 +406,7 @@ static std::array PyPfs_methods = {
     PyMethodDef{
         .ml_name  = "open",
         .ml_meth  = _PyCFunction_CAST(PyPfs_open),
-        .ml_flags = METH_FASTCALL,
+        .ml_flags = METH_VARARGS,
         .ml_doc   = "Opens entry"
     },
     PyMethodDef{ nullptr },
@@ -540,12 +528,9 @@ static PyObject *PyHfs_get_entries(PyHfs *self, [[maybe_unused]] PyObject *args)
     return dict;
 }
 
-static PyObject *PyHfs_open(PyHfs *self, PyObject **args, Py_ssize_t nargs) {
-    if (nargs != 1)
-        return nullptr;
-
+static PyObject *PyHfs_open(PyHfs *self, PyObject *args) {
     PyHfsEntry *entry = nullptr;
-    if (!_PyArg_ParseStack(args, nargs, "O", &entry))
+    if (!PyArg_ParseTuple(args, "O", &entry))
         return nullptr;
 
     auto *file = PyObject_New(PyFileBase, &PyFileBaseType);
@@ -579,7 +564,7 @@ static std::array PyHfs_methods = {
     PyMethodDef{
         .ml_name  = "open",
         .ml_meth  = _PyCFunction_CAST(PyHfs_open),
-        .ml_flags = METH_FASTCALL,
+        .ml_flags = METH_VARARGS,
         .ml_doc   = "Opens entry"
     },
     PyMethodDef{ nullptr },
@@ -877,12 +862,9 @@ static PyObject *PyRomfs_get_entries(PyRomfs *self, [[maybe_unused]] PyObject *a
     return Py_BuildValue("(OO)", file_dict, dir_dict);
 }
 
-static PyObject *PyRomfs_open(PyRomfs *self, PyObject **args, Py_ssize_t nargs) {
-    if (nargs != 1)
-        return nullptr;
-
+static PyObject *PyRomfs_open(PyRomfs *self, PyObject *args) {
     PyRomfsFileEntry *entry = nullptr;
-    if (!_PyArg_ParseStack(args, nargs, "O", &entry))
+    if (!PyArg_ParseTuple(args, "O", &entry))
         return nullptr;
 
     auto *file = PyObject_New(PyFileBase, &PyFileBaseType);
@@ -920,7 +902,7 @@ static std::array PyRomfs_methods = {
     PyMethodDef{
         .ml_name  = "open",
         .ml_meth  = _PyCFunction_CAST(PyRomfs_open),
-        .ml_flags = METH_FASTCALL,
+        .ml_flags = METH_VARARGS,
         .ml_doc   = "Opens entry"
     },
     PyMethodDef{ nullptr },
@@ -1272,13 +1254,10 @@ static PyTypeObject PyXciType = {
     .tp_new       = PyType_GenericNew,
 };
 
-static PyObject *fnxbinds_set_key(PyObject *self, PyObject **args, Py_ssize_t nargs) {
-    if (nargs != 2)
-        return nullptr;
-
+static PyObject *fnxbinds_set_key(PyObject *self, PyObject *args) {
     char *name_str = nullptr, *key_str = nullptr;
     Py_ssize_t name_size = 0, key_size = 0;
-    if (!_PyArg_ParseStack(args, nargs, "s#s#", &name_str, &name_size, &key_str, &key_size))
+    if (!PyArg_ParseTuple(args, "s#s#", &name_str, &name_size, &key_str, &key_size))
         return nullptr;
 
     fnx::crypt::KeySet::get()->set_key({ name_str, static_cast<std::size_t>(name_size) },
@@ -1286,13 +1265,10 @@ static PyObject *fnxbinds_set_key(PyObject *self, PyObject **args, Py_ssize_t na
     Py_RETURN_NONE;
 }
 
-static PyObject *fnxbinds_set_titlekey(PyObject *self, PyObject **args, Py_ssize_t nargs) {
-    if (nargs != 2)
-        return nullptr;
-
+static PyObject *fnxbinds_set_titlekey(PyObject *self, PyObject *args) {
     char *name_str = nullptr, *key_str = nullptr;
     Py_ssize_t name_size = 0, key_size = 0;
-    if (!_PyArg_ParseStack(args, nargs, "s#s#", &name_str, &name_size, &key_str, &key_size))
+    if (!PyArg_ParseTuple(args, "s#s#", &name_str, &name_size, &key_str, &key_size))
         return nullptr;
 
     fnx::crypt::TitlekeySet::get()->set_key({ name_str, static_cast<std::size_t>(name_size) },
@@ -1300,13 +1276,10 @@ static PyObject *fnxbinds_set_titlekey(PyObject *self, PyObject **args, Py_ssize
     Py_RETURN_NONE;
 }
 
-static PyObject *fnxbinds_set_user_titlekey(PyObject *self, PyObject **args, Py_ssize_t nargs) {
-    if (nargs != 1)
-        return nullptr;
-
+static PyObject *fnxbinds_set_user_titlekey(PyObject *self, PyObject *args) {
     char *key_str = nullptr;
     Py_ssize_t key_size = 0;
-    if (!_PyArg_ParseStack(args, nargs, "s#", &key_str, &key_size))
+    if (!PyArg_ParseTuple(args, "s#", &key_str, &key_size))
         return nullptr;
 
     fnx::crypt::TitlekeySet::get()->set_cli_key({ key_str, static_cast<std::size_t>(key_size) });
@@ -1318,9 +1291,9 @@ static PyObject *fnxbinds_remove_user_titlekey(PyObject *self, PyObject *args) {
     Py_RETURN_NONE;
 }
 
-static PyObject *fnxbinds_match(PyObject *self, PyObject **args, Py_ssize_t nargs) {
+static PyObject *fnxbinds_match(PyObject *self, PyObject *args) {
     PyFileBase *base = nullptr;
-    if (!_PyArg_ParseStack(args, nargs, "O", &base))
+    if (!PyArg_ParseTuple(args, "O", &base))
         return nullptr;
 
     return PyLong_FromLong(static_cast<long>(fnx::hac::match(base->ptr->read(0x400))));
@@ -1330,19 +1303,19 @@ static std::array fnxbinds_methods = {
     PyMethodDef{
         .ml_name  = "set_key",
         .ml_meth  = _PyCFunction_CAST(fnxbinds_set_key),
-        .ml_flags = METH_FASTCALL,
+        .ml_flags = METH_VARARGS,
         .ml_doc   = "Sets a prod/dev key"
     },
     PyMethodDef{
         .ml_name  = "set_titlekey",
         .ml_meth  = _PyCFunction_CAST(fnxbinds_set_titlekey),
-        .ml_flags = METH_FASTCALL,
+        .ml_flags = METH_VARARGS,
         .ml_doc   = "Sets a titlekey for a rightsid"
     },
     PyMethodDef{
         .ml_name  = "set_user_titlekey",
         .ml_meth  = _PyCFunction_CAST(fnxbinds_set_user_titlekey),
-        .ml_flags = METH_FASTCALL,
+        .ml_flags = METH_VARARGS,
         .ml_doc   = "Sets the titlekey that will be used for every rightsid"
     },
     PyMethodDef{
@@ -1354,7 +1327,7 @@ static std::array fnxbinds_methods = {
     PyMethodDef{
         .ml_name  = "match",
         .ml_meth  = _PyCFunction_CAST(fnxbinds_match),
-        .ml_flags = METH_FASTCALL,
+        .ml_flags = METH_VARARGS,
         .ml_doc   = "Returns an id based on the format of the file"
     },
     PyMethodDef{ nullptr },
